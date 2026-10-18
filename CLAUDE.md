@@ -21,7 +21,8 @@ Shared course server. Other students' apps run on it too.
 | Code | `~/apps/tuition/` |
 | Database | `~/data/tuition/tuition.db` |
 | Backups | `~/data/tuition/backups/` (daily cron at 21:00 UTC, kept 14 days) |
-| Settings and secrets | `~/.config/tuition.env` (chmod 600, never committed) |
+| Settings and secrets | `~/.config/tuition.env` (chmod 600, never committed). Quote values containing spaces, e.g. `CENTER_NAME="Bright Future Tuition"` |
+| Admin login | user `admin`; generated password stored only in `~/.config/tuition-admin.txt` (chmod 600) |
 | Service | `~/.config/systemd/user/tuition.service` |
 
 ### Updating
