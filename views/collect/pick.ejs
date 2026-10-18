@@ -1,0 +1,45 @@
+<%- include('../partials/head') %>
+<div class="page-head">
+  <div><h1>Collect fee</h1><div class="sub">Find the student</div></div>
+</div>
+
+<div class="search" style="margin-bottom: 12px;">
+  <%- include('../partials/icon', { name: 'search' }) %>
+  <input type="search" id="studentSearch" placeholder="Type name or phone number" aria-label="Search students"
+         autocomplete="off" autofocus data-filter="#studentList" data-empty="#noMatch">
+</div>
+
+<div class="chips" role="group" aria-label="Filter by class">
+  <button type="button" class="chip active" data-batch-chip="">All</button>
+  <% batches.forEach((b) => { %>
+    <button type="button" class="chip" data-batch-chip="<%= b.id %>"><%= u.batchLabel(b) %></button>
+  <% }) %>
+</div>
+
+<section class="card flush">
+  <ul class="list" id="studentList">
+    <% students.forEach((s) => { %>
+      <li data-search="<%= [s.name, s.phone, s.guardian_phone, u.batchLabel(s)].filter(Boolean).join(' ').toLowerCase() %>" data-batch="<%= s.batch_id %>">
+        <a class="list-item" href="/collect/<%= s.id %>">
+          <span class="avatar"><%= s.name.charAt(0).toUpperCase() %></span>
+          <div class="list-main">
+            <div class="list-title"><%= s.name %></div>
+            <div class="list-sub"><%= u.batchLabel(s) %><% if (s.roll_no) { %> · Roll <%= s.roll_no %><% } %></div>
+          </div>
+          <div class="list-end">
+            <% if (s.balance > 0) { %>
+              <div class="num" style="font-weight: 700; color: var(--danger);"><%= u.inr(s.balance) %></div>
+            <% } else { %>
+              <span class="badge badge-paid">Paid up</span>
+            <% } %>
+          </div>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+  <div class="empty <%= students.length ? 'hidden' : '' %>" id="noMatch">
+    <%= students.length ? 'No matching students' : 'No students yet.' %>
+    <% if (!students.length) { %><div style="margin-top: 12px;"><a class="btn btn-primary" href="/students/new">Add student</a></div><% } %>
+  </div>
+</section>
+<%- include('../partials/foot') %>

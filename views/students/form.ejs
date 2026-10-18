@@ -1,0 +1,75 @@
+<%- include('../partials/head') %>
+<% const isEdit = Boolean(s.id); %>
+<a class="back" href="<%= isEdit ? `/students/${s.id}` : '/students' %>"><%- include('../partials/icon', { name: 'back' }) %> Back</a>
+<div class="page-head"><h1><%= isEdit ? 'Edit student' : 'Add student' %></h1></div>
+
+<form method="post" action="<%= isEdit ? `/students/${s.id}` : '/students' %>" class="card form-narrow">
+  <% if (errors.length) { %>
+    <div class="errors"><ul><% errors.forEach((e) => { %><li><%= e %></li><% }) %></ul></div>
+  <% } %>
+
+  <div class="field">
+    <label for="name">Student name</label>
+    <input id="name" name="name" value="<%= s.name || '' %>" required autocomplete="off" <%= isEdit ? '' : 'autofocus' %>>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="batch_id">Class</label>
+      <select id="batch_id" name="batch_id" required>
+        <option value="">Choose class</option>
+        <% batches.forEach((b) => { %>
+          <option value="<%= b.id %>" <%= Number(s.batch_id) === b.id ? 'selected' : '' %>><%= u.batchLabel(b) %> · <%= u.inr(b.monthly_fee) %>/month</option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="field">
+      <label for="roll_no">Roll no. <span class="muted">(optional)</span></label>
+      <input id="roll_no" name="roll_no" value="<%= s.roll_no || '' %>" inputmode="numeric">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="guardian_name">Parent / guardian name</label>
+      <input id="guardian_name" name="guardian_name" value="<%= s.guardian_name || '' %>">
+    </div>
+    <div class="field">
+      <label for="guardian_phone">Parent phone</label>
+      <input id="guardian_phone" name="guardian_phone" value="<%= s.guardian_phone || '' %>" type="tel" inputmode="tel">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="phone">Student phone <span class="muted">(optional)</span></label>
+      <input id="phone" name="phone" value="<%= s.phone || '' %>" type="tel" inputmode="tel">
+    </div>
+    <div class="field">
+      <label for="joined_on">Joining date</label>
+      <input id="joined_on" name="joined_on" type="date" value="<%= s.joined_on || '' %>" required>
+      <div class="hint">Fees are charged from this month onward.</div>
+    </div>
+  </div>
+  <div class="field">
+    <label for="address">Address <span class="muted">(optional)</span></label>
+    <textarea id="address" name="address" rows="2"><%= s.address || '' %></textarea>
+  </div>
+
+  <% if (isEdit) { %>
+  <div class="form-row">
+    <div class="field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="active" <%= s.status === 'active' ? 'selected' : '' %>>Active</option>
+        <option value="inactive" <%= s.status === 'inactive' ? 'selected' : '' %>>Left the center</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="left_on">Leaving date</label>
+      <input id="left_on" name="left_on" type="date" value="<%= s.left_on || '' %>">
+      <div class="hint">Only used when status is “Left”. No fees are charged after this month.</div>
+    </div>
+  </div>
+  <% } %>
+
+  <button class="btn btn-primary btn-lg btn-block" type="submit"><%= isEdit ? 'Save changes' : 'Add student' %></button>
+</form>
+<%- include('../partials/foot') %>

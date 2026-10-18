@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1f5f8b">
+  <title>Login · <%= center.name %></title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <main class="login-page">
+    <div class="card login-card">
+      <div class="brand"><span class="brand-mark">₹</span><span><%= center.name %></span></div>
+      <% if (noUsers) { %>
+        <div class="errors">No admin account yet. On the server run <code>npm run create-admin</code>.</div>
+      <% } %>
+      <% if (error) { %><div class="errors"><%= error %></div><% } %>
+      <form method="post" action="/login">
+        <input type="hidden" name="next" value="<%= next %>">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" name="username" autocomplete="username" autocapitalize="none" required autofocus>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block">Log in</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

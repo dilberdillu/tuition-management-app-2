@@ -1,0 +1,43 @@
+<%- include('../partials/head') %>
+<a class="back" href="/attendance"><%- include('../partials/icon', { name: 'back' }) %> Attendance</a>
+<div class="page-head">
+  <div><h1>Attendance report</h1><div class="sub">Class <%= u.batchLabel(batch) %> · <%= u.monthLabel(month) %> · <%= days.length %> class day<%= days.length === 1 ? '' : 's' %> marked</div></div>
+</div>
+
+<form class="filters" method="get" action="/attendance/report">
+  <select name="batch" aria-label="Class" data-autosubmit>
+    <% batches.forEach((b) => { %><option value="<%= b.id %>" <%= b.id === batch.id ? 'selected' : '' %>>Class <%= u.batchLabel(b) %></option><% }) %>
+  </select>
+  <select name="month" aria-label="Month" data-autosubmit>
+    <% monthOptions.forEach((m) => { %><option value="<%= m %>" <%= m === month ? 'selected' : '' %>><%= u.monthLabel(m) %></option><% }) %>
+  </select>
+  <noscript><button class="btn" type="submit">Show</button></noscript>
+</form>
+
+<section class="card flush">
+  <% if (!rows.length) { %>
+    <div class="empty">No students in this class</div>
+  <% } else { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Student</th><th class="num">Present</th><th class="num">Absent</th><th class="num">%</th><th>Absent on</th></tr></thead>
+      <tbody>
+        <% rows.forEach((r) => { const total = r.present + r.absent; const p = total ? Math.round((r.present / total) * 100) : null; %>
+          <tr>
+            <td><a href="/students/<%= r.id %>"><%= r.name %></a><% if (r.roll_no) { %><div class="muted small">Roll <%= r.roll_no %></div><% } %></td>
+            <td class="num"><%= r.present %></td>
+            <td class="num"><%= r.absent %></td>
+            <td class="num">
+              <% if (p === null) { %>—<% } else { %>
+                <span class="badge <%= p >= 85 ? 'badge-paid' : p >= 70 ? 'badge-partial' : 'badge-due' %>"><%= p %>%</span>
+              <% } %>
+            </td>
+            <td class="small muted"><%= r.absentDays ? r.absentDays.split(',').map(Number).sort((a, b) => a - b).join(', ') : '' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+<%- include('../partials/foot') %>

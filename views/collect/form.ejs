@@ -1,0 +1,79 @@
+<%- include('../partials/head') %>
+<%
+  const fee = student.monthly_fee;
+  const quick = [];
+  if (balance > 0) quick.push({ label: `Full due ${u.inr(balance)}`, amount: balance });
+  [1, 2, 3].forEach((n) => { if (fee > 0 && fee * n !== balance) quick.push({ label: `${n} month${n > 1 ? 's' : ''} ${u.inr(fee * n)}`, amount: fee * n }); });
+%>
+<a class="back" href="/collect"><%- include('../partials/icon', { name: 'back' }) %> Change student</a>
+
+<div class="grid grid-1-2">
+  <section class="card">
+    <div class="profile-head">
+      <span class="avatar"><%= student.name.charAt(0).toUpperCase() %></span>
+      <div style="min-width: 0;">
+        <h1 style="font-size: 1.15rem;"><a href="/students/<%= student.id %>" style="color: inherit;"><%= student.name %></a></h1>
+        <div class="muted small">Class <%= u.batchLabel(student) %> · <%= u.inr(fee) %>/month</div>
+      </div>
+    </div>
+    <div style="margin-top: 14px;">
+      <div class="muted small"><%= balance < 0 ? 'Advance paid' : 'Pending amount' %></div>
+      <div class="balance-card"><span class="amount <%= balance > 0 ? 'due' : 'clear' %>"><%= u.inr(Math.abs(balance)) %></span></div>
+    </div>
+    <% if (pendingMonths.length) { %>
+      <div style="margin-top: 10px;" class="pending-months">
+        <% pendingMonths.forEach((d) => { %>
+          <span class="badge <%= d.status === 'partial' ? 'badge-partial' : 'badge-due' %>"><%= d.label %><%= d.status === 'partial' ? ` · ${u.inr(d.amount - d.settled)} left` : '' %></span>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="muted small" style="margin-bottom: 0;">No pending months. Any amount collected now is kept as advance for coming months.</p>
+    <% } %>
+  </section>
+
+  <form class="card" method="post" action="/collect/<%= student.id %>">
+    <% if (errors.length) { %>
+      <div class="errors"><ul><% errors.forEach((e) => { %><li><%= e %></li><% }) %></ul></div>
+    <% } %>
+
+    <div class="field">
+      <label for="amount">Amount</label>
+      <div class="amount-wrap">
+        <input id="amount" name="amount" class="amount-input" value="<%= values.amount %>" inputmode="numeric" pattern="[0-9,]*" required autocomplete="off">
+      </div>
+      <div class="chips" style="margin: 8px 0 0;">
+        <% quick.forEach((q) => { %><button type="button" class="chip" data-amount="<%= q.amount %>"><%= q.label %></button><% }) %>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Payment mode</label>
+      <div class="segmented">
+        <% modes.forEach((m, i) => { %>
+          <input type="radio" name="mode" id="mode<%= i %>" value="<%= m %>" <%= values.mode === m ? 'checked' : '' %>>
+          <label for="mode<%= i %>"><%= m %></label>
+        <% }) %>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="paid_on">Date</label>
+        <input id="paid_on" name="paid_on" type="date" value="<%= values.paid_on %>" max="<%= u.today() %>" required>
+      </div>
+      <div class="field">
+        <label for="reference">Reference <span class="muted">(UPI / cheque no.)</span></label>
+        <input id="reference" name="reference" value="<%= values.reference %>" autocomplete="off">
+      </div>
+    </div>
+    <div class="field">
+      <label for="note">Note <span class="muted">(optional)</span></label>
+      <input id="note" name="note" value="<%= values.note %>" autocomplete="off">
+    </div>
+
+    <div class="sticky-submit">
+      <button class="btn btn-success btn-lg btn-block" type="submit"><%- include('../partials/icon', { name: 'check' }) %> Save payment</button>
+    </div>
+  </form>
+</div>
+<%- include('../partials/foot') %>

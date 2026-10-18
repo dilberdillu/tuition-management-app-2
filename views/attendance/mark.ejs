@@ -1,0 +1,53 @@
+<%- include('../partials/head') %>
+<a class="back" href="/attendance?date=<%= date %>"><%- include('../partials/icon', { name: 'back' }) %> All classes</a>
+<div class="page-head">
+  <div>
+    <h1>Class <%= u.batchLabel(batch) %></h1>
+    <div class="sub"><%= u.dateLabel(date) %><%= alreadyMarked ? ' · already marked, you can update it' : '' %></div>
+  </div>
+  <form class="actions" method="get" action="/attendance">
+    <input type="hidden" name="batch" value="<%= batch.id %>">
+    <input type="date" name="date" value="<%= date %>" max="<%= u.today() %>" aria-label="Date" data-autosubmit>
+  </form>
+</div>
+
+<% if (!students.length) { %>
+  <div class="card empty">No students in this class on this date. <div style="margin-top: 12px;"><a class="btn btn-primary" href="/students/new?batch=<%= batch.id %>">Add student</a></div></div>
+<% } else { %>
+<form method="post" action="/attendance" id="attForm">
+  <input type="hidden" name="batch" value="<%= batch.id %>">
+  <input type="hidden" name="date" value="<%= date %>">
+
+  <div class="card" style="padding: 12px 16px; margin-bottom: 12px;">
+    <div class="att-summary">
+      <span class="badge badge-paid"><span id="presentCount"><%= students.length %></span> present</span>
+      <span class="badge badge-due"><span id="absentCount">0</span> absent</span>
+      <span class="muted small">Tap a student to toggle</span>
+      <span style="margin-left: auto; display: flex; gap: 6px;">
+        <button type="button" class="btn btn-sm" data-mark-all="P">All present</button>
+        <button type="button" class="btn btn-sm" data-mark-all="A">All absent</button>
+      </span>
+    </div>
+  </div>
+
+  <section class="card flush">
+    <ul class="att-list">
+      <% students.forEach((s, i) => { %>
+        <li class="att-item">
+          <input type="checkbox" name="present" value="<%= s.id %>" id="st<%= s.id %>" <%= s.status === 'A' ? '' : 'checked' %>>
+          <label for="st<%= s.id %>">
+            <span class="roll"><%= s.roll_no || i + 1 %></span>
+            <span class="name"><%= s.name %></span>
+            <span class="att-toggle" aria-hidden="true"></span>
+          </label>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <div class="sticky-submit" style="margin-top: 16px;">
+    <button class="btn btn-primary btn-lg btn-block" type="submit"><%- include('../partials/icon', { name: 'check' }) %> Save attendance</button>
+  </div>
+</form>
+<% } %>
+<%- include('../partials/foot') %>

@@ -1,0 +1,23 @@
+# /etc/systemd/system/tuition.service
+[Unit]
+Description=Tuition Manager
+After=network.target
+
+[Service]
+Type=simple
+User=tuition
+WorkingDirectory=/opt/tuition
+EnvironmentFile=/opt/tuition/.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/tuition/data /opt/tuition/backups
+
+[Install]
+WantedBy=multi-user.target

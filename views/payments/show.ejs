@@ -1,0 +1,61 @@
+<%- include('../partials/head') %>
+<div class="receipt">
+  <% if (isNew && !payment.voided) { %>
+    <div class="receipt-success">
+      <div class="tick"><%- include('../partials/icon', { name: 'check' }) %></div>
+      <h1>Payment saved</h1>
+    </div>
+  <% } else { %>
+    <a class="back" href="/students/<%= payment.student_id %>#receipts"><%- include('../partials/icon', { name: 'back' }) %> <%= payment.student_name %></a>
+  <% } %>
+
+  <section class="card">
+    <% if (payment.voided) { %>
+      <div class="void-banner">Cancelled<%= payment.void_reason ? ` · ${payment.void_reason}` : '' %></div>
+    <% } %>
+    <div class="card-head">
+      <div>
+        <div class="muted small">Receipt</div>
+        <h2><%= payment.receipt_no %></h2>
+      </div>
+      <div class="right">
+        <div class="muted small"><%= u.dateLabel(payment.paid_on) %></div>
+        <span class="badge"><%= payment.mode %></span>
+      </div>
+    </div>
+    <div class="receipt-amount"><%= u.inr(payment.amount) %></div>
+    <dl class="kv" style="margin-top: 12px;">
+      <dt>Student</dt><dd><a href="/students/<%= payment.student_id %>"><%= payment.student_name %></a> · <%= u.batchLabel(payment) %></dd>
+      <dt>Towards</dt><dd><%= payment.covers || 'Tuition fee' %></dd>
+      <% if (payment.reference) { %><dt>Reference</dt><dd><%= payment.reference %></dd><% } %>
+      <% if (payment.note) { %><dt>Note</dt><dd><%= payment.note %></dd><% } %>
+      <dt>Pending now</dt>
+      <dd style="color: <%= balance > 0 ? 'var(--danger)' : 'var(--success)' %>;">
+        <%= balance > 0 ? u.inr(balance) : balance < 0 ? `Nil · advance ${u.inr(-balance)}` : 'Nil' %>
+      </dd>
+    </dl>
+  </section>
+
+  <div class="stack" style="margin-top: 16px;">
+    <a class="btn btn-primary btn-lg btn-block" href="/payments/<%= payment.id %>/receipt.pdf"><%- include('../partials/icon', { name: 'download' }) %> Download PDF receipt</a>
+    <div class="grid grid-2" style="gap: 10px;">
+      <a class="btn btn-block" href="/payments/<%= payment.id %>/receipt.pdf?view=1" target="_blank" rel="noopener"><%- include('../partials/icon', { name: 'file' }) %> Open / print</a>
+      <a class="btn btn-block" href="/collect"><%- include('../partials/icon', { name: 'rupee' }) %> Collect another</a>
+    </div>
+  </div>
+
+  <% if (!payment.voided) { %>
+    <details class="no-print" style="margin-top: 28px;">
+      <summary>Entered by mistake? Cancel this receipt</summary>
+      <form method="post" action="/payments/<%= payment.id %>/void" class="card" style="margin-top: 10px;"
+            data-confirm="Cancel receipt <%= payment.receipt_no %>? The amount will be added back to pending.">
+        <div class="field">
+          <label for="reason">Reason</label>
+          <input id="reason" name="reason" placeholder="e.g. Wrong amount entered" required>
+        </div>
+        <button class="btn btn-danger btn-block" type="submit">Cancel receipt</button>
+      </form>
+    </details>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

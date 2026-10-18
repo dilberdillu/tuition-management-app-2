@@ -1,0 +1,32 @@
+<%- include('../partials/head') %>
+<div class="page-head">
+  <div><h1>Attendance</h1><div class="sub"><%= isToday ? 'Today · ' : '' %><%= u.dateLabel(date) %></div></div>
+  <form class="actions" method="get" action="/attendance">
+    <input type="date" name="date" value="<%= date %>" max="<%= u.today() %>" aria-label="Date" data-autosubmit>
+    <a class="btn" href="/attendance/report">Monthly report</a>
+  </form>
+</div>
+
+<% [8, 9, 10].forEach((classNo) => { %>
+  <div class="class-group">
+    <h2>Class <%= classNo %></h2>
+    <div class="class-grid">
+      <% classes.filter((c) => c.class_no === classNo).forEach((c) => { const done = c.students > 0 && c.marked >= c.students; %>
+        <a class="class-tile <%= done ? 'done' : '' %>" href="/attendance?batch=<%= c.id %>&date=<%= date %>">
+          <div class="ct-name"><%= u.batchLabel(c) %></div>
+          <div class="ct-meta"><%= c.students %> student<%= c.students === 1 ? '' : 's' %></div>
+          <div style="margin-top: 8px;">
+            <% if (!c.students) { %>
+              <span class="badge">No students</span>
+            <% } else if (c.marked) { %>
+              <span class="badge badge-paid"><%= c.present %>/<%= c.marked %> present</span>
+            <% } else { %>
+              <span class="badge badge-partial">Not marked</span>
+            <% } %>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+<% }) %>
+<%- include('../partials/foot') %>

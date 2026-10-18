@@ -1,0 +1,65 @@
+<%- include('partials/head') %>
+<div class="page-head">
+  <div><h1>Collections report</h1><div class="sub"><%= u.dateLabel(from) %> – <%= u.dateLabel(to) %></div></div>
+  <div class="actions">
+    <a class="btn" href="/reports?<%= query %>&format=csv"><%- include('partials/icon', { name: 'download' }) %> CSV</a>
+  </div>
+</div>
+
+<form class="filters card" method="get" action="/reports" style="padding: 12px;">
+  <div><label for="from">From</label><input id="from" type="date" name="from" value="<%= from %>"></div>
+  <div><label for="to">To</label><input id="to" type="date" name="to" value="<%= to %>"></div>
+  <div>
+    <label for="batch">Class</label>
+    <select id="batch" name="batch">
+      <option value="">All classes</option>
+      <% batches.forEach((b) => { %><option value="<%= b.id %>" <%= b.id === batchId ? 'selected' : '' %>><%= u.batchLabel(b) %></option><% }) %>
+    </select>
+  </div>
+  <div>
+    <label for="mode">Mode</label>
+    <select id="mode" name="mode">
+      <option value="">All modes</option>
+      <% modes.forEach((m) => { %><option <%= m === mode ? 'selected' : '' %>><%= m %></option><% }) %>
+    </select>
+  </div>
+  <div style="align-self: end; flex: 0 0 auto;"><button class="btn btn-primary" type="submit">Apply</button></div>
+</form>
+
+<div class="stats" style="margin-top: 16px;">
+  <div class="stat accent">
+    <div class="stat-label">Total collected</div>
+    <div class="stat-value"><%= u.inr(total) %></div>
+    <div class="stat-foot"><%= payments.length %> receipt<%= payments.length === 1 ? '' : 's' %></div>
+  </div>
+  <% modes.forEach((m) => { %>
+    <% if (byMode[m]) { %>
+      <div class="stat"><div class="stat-label"><%= m %></div><div class="stat-value"><%= u.inr(byMode[m]) %></div></div>
+    <% } %>
+  <% }) %>
+</div>
+
+<section class="card flush">
+  <% if (!payments.length) { %>
+    <div class="empty">No payments in this period</div>
+  <% } else { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Student</th><th>Receipt</th><th>Mode</th><th class="num">Amount</th></tr></thead>
+      <tbody>
+        <% payments.forEach((p) => { %>
+          <tr>
+            <td class="nowrap"><%= u.dateLabel(p.paid_on) %></td>
+            <td><a href="/students/<%= p.student_id %>"><%= p.name %></a><div class="muted small"><%= u.batchLabel(p) %></div></td>
+            <td class="nowrap"><a href="/payments/<%= p.id %>"><%= p.receipt_no %></a></td>
+            <td><%= p.mode %></td>
+            <td class="num"><%= u.inr(p.amount) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+      <tfoot><tr><td colspan="4">Total</td><td class="num"><%= u.inr(total) %></td></tr></tfoot>
+    </table>
+  </div>
+  <% } %>
+</section>
+<%- include('partials/foot') %>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f5f8b">
+  <title><%= title %> · <%= center.name %></title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<%
+  const nav = [
+    { href: '/', label: 'Home', icon: 'home', match: (p) => p === '/' },
+    { href: '/students', label: 'Students', icon: 'users', match: (p) => p.startsWith('/students') },
+    { href: '/collect', label: 'Collect', icon: 'rupee', match: (p) => p.startsWith('/collect') || p.startsWith('/payments'), primary: true },
+    { href: '/attendance', label: 'Attendance', icon: 'calendar', match: (p) => p.startsWith('/attendance') },
+    { href: '/reports', label: 'Reports', icon: 'chart', match: (p) => p.startsWith('/reports') },
+  ];
+%>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="/" class="brand"><span class="brand-mark">₹</span><span class="brand-name"><%= center.name %></span></a>
+    <nav class="topnav" aria-label="Main">
+      <% nav.forEach((n) => { %>
+        <a href="<%= n.href %>" class="<%= n.match(path) ? 'active' : '' %> <%= n.primary ? 'topnav-primary' : '' %>"><%= n.primary ? 'Collect fee' : n.label %></a>
+      <% }) %>
+    </nav>
+    <div class="topbar-actions">
+      <a href="/settings" class="icon-btn <%= path.startsWith('/settings') ? 'active' : '' %>" title="Settings" aria-label="Settings"><%- include('icon', { name: 'settings' }) %></a>
+      <form method="post" action="/logout"><button class="icon-btn" title="Log out" aria-label="Log out"><%- include('icon', { name: 'logout' }) %></button></form>
+    </div>
+  </div>
+</header>
+
+<nav class="bottomnav" aria-label="Main">
+  <% nav.forEach((n) => { %>
+    <a href="<%= n.href %>" class="<%= n.match(path) ? 'active' : '' %> <%= n.primary ? 'bottomnav-primary' : '' %>">
+      <span class="bn-icon"><%- include('icon', { name: n.icon }) %></span>
+      <span class="bn-label"><%= n.label %></span>
+    </a>
+  <% }) %>
+</nav>
+
+<main class="page">
+<% if (flash) { %>
+  <div class="flash flash-<%= flash.type %>" role="status"><%= flash.message %></div>
+<% } %>

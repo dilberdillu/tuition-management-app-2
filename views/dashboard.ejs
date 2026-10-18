@@ -1,0 +1,163 @@
+<%- include('partials/head') %>
+<%
+  const pct = (a, b) => (b > 0 ? Math.min(100, Math.round((a / b) * 100)) : 0);
+  const monthName = u.monthLabel(month);
+  const maxMode = Math.max(1, ...modes.map((m) => m.total));
+%>
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <div class="sub"><%= u.dateLabel(u.today()) %></div>
+  </div>
+  <form class="actions" method="get" action="/">
+    <select name="month" aria-label="Month" data-autosubmit>
+      <% monthOptions.forEach((m) => { %>
+        <option value="<%= m %>" <%= m === month ? 'selected' : '' %>><%= u.monthLabel(m) %></option>
+      <% }) %>
+    </select>
+  </form>
+</div>
+
+<a class="quick-collect" href="/collect">
+  <span class="qc-icon"><%- include('partials/icon', { name: 'rupee' }) %></span>
+  <div><strong>Collect fee</strong><span>Search a student and record a payment</span></div>
+  <span class="chev"><%- include('partials/icon', { name: 'chevron' }) %></span>
+</a>
+
+<div class="stats">
+  <div class="stat accent">
+    <div class="stat-label">Collected today</div>
+    <div class="stat-value"><%= u.inr(todayCollected) %></div>
+    <div class="stat-foot"><%= todayCount %> payment<%= todayCount === 1 ? '' : 's' %></div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Collected in <%= monthName %></div>
+    <div class="stat-value"><%= u.inr(monthCollected) %></div>
+    <div class="stat-foot">of <%= u.inr(monthBilled) %> billed · <%= pct(monthCollected, monthBilled) %>%</div>
+    <div class="progress"><span style="width: <%= pct(monthCollected, monthBilled) %>%"></span></div>
+  </div>
+  <a class="stat warn" href="/students?pending=1" style="color: inherit; text-decoration: none;">
+    <div class="stat-label">Total pending</div>
+    <div class="stat-value"><%= u.inr(outstanding) %></div>
+    <div class="stat-foot"><%= pendingCount %> of <%= activeCount %> students</div>
+  </a>
+  <a class="stat" href="/attendance" style="color: inherit; text-decoration: none;">
+    <div class="stat-label">Attendance today</div>
+    <% if (att.marked) { %>
+      <div class="stat-value"><%= pct(att.present, att.marked) %>%</div>
+      <div class="stat-foot"><%= att.present %> present · <%= att.marked - att.present %> absent</div>
+    <% } else { %>
+      <div class="stat-value muted">—</div>
+      <div class="stat-foot">Not marked yet</div>
+    <% } %>
+  </a>
+</div>
+
+<div class="grid grid-3-1">
+  <section class="card">
+    <div class="card-head"><h2>Monthly collections</h2><span class="muted small">Last 12 months</span></div>
+    <div class="chart-box">
+      <canvas id="trendChart" role="img" aria-label="Bar chart of fees collected per month"
+        data-chart="<%= JSON.stringify(trend) %>"></canvas>
+    </div>
+    <details class="no-print" style="margin-top: 10px;">
+      <summary>Show as table</summary>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Month</th><th class="num">Collected</th></tr></thead>
+        <tbody><% trend.labels.forEach((l, i) => { %><tr><td><%= l %></td><td class="num"><%= u.inr(trend.values[i]) %></td></tr><% }) %></tbody>
+      </table></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>By payment mode</h2><span class="muted small"><%= monthName %></span></div>
+    <% if (!modes.length) { %>
+      <div class="empty">No payments yet</div>
+    <% } %>
+    <% modes.forEach((m) => { %>
+      <div class="mode-row">
+        <div style="width: 64px;" class="small"><strong><%= m.mode %></strong></div>
+        <div class="mode-bar"><span style="width: <%= Math.round((m.total / maxMode) * 100) %>%"></span></div>
+        <div class="num small right" style="min-width: 84px;"><%= u.inr(m.total) %><div class="muted"><%= m.count %> paid</div></div>
+      </div>
+    <% }) %>
+  </section>
+</div>
+
+<div class="grid grid-2" style="margin-top: 16px;">
+  <section class="card flush">
+    <div class="card-head"><h2>Highest pending</h2><a href="/students?pending=1">View all</a></div>
+    <% if (!topPending.length) { %>
+      <div class="empty">Everyone is up to date 🎉</div>
+    <% } else { %>
+    <ul class="list">
+      <% topPending.forEach((s) => { %>
+        <li class="list-item">
+          <a href="/students/<%= s.id %>" class="avatar" aria-hidden="true" tabindex="-1"><%= s.name.charAt(0).toUpperCase() %></a>
+          <a href="/students/<%= s.id %>" class="list-main" style="color: inherit;">
+            <div class="list-title"><%= s.name %></div>
+            <% const months = s.monthly_fee > 0 ? Math.ceil(s.balance / s.monthly_fee) : 0; %>
+            <div class="list-sub"><%= u.batchLabel(s) %><%= months ? ` · ${months} month${months > 1 ? 's' : ''}` : '' %></div>
+          </a>
+          <div class="list-end">
+            <div class="num" style="font-weight: 700; color: var(--danger);"><%= u.inr(s.balance) %></div>
+            <a class="small" href="/collect/<%= s.id %>">Collect</a>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="card flush">
+    <div class="card-head"><h2>Recent payments</h2><a href="/reports">Reports</a></div>
+    <% if (!recent.length) { %>
+      <div class="empty">No payments recorded yet</div>
+    <% } else { %>
+    <ul class="list">
+      <% recent.forEach((p) => { %>
+        <li><a class="list-item" href="/payments/<%= p.id %>">
+          <div class="list-main">
+            <div class="list-title"><%= p.name %></div>
+            <div class="list-sub"><%= u.batchLabel(p) %> · <%= p.mode %> · <%= u.dateLabel(p.paid_on) %></div>
+          </div>
+          <div class="list-end num" style="font-weight: 700;"><%= u.inr(p.amount) %></div>
+        </a></li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+</div>
+
+<section class="card flush" style="margin-top: 16px;">
+  <div class="card-head"><h2>Class-wise · <%= monthName %></h2></div>
+  <div class="table-wrap" style="margin-top: 12px;">
+    <table>
+      <thead>
+        <tr><th>Class</th><th class="num">Students</th><th class="num">Billed</th><th class="num">Collected</th><th class="num">Pending now</th></tr>
+      </thead>
+      <tbody>
+        <% classes.forEach((c) => { %>
+          <tr>
+            <td><a href="/students?batch=<%= c.id %>"><strong><%= u.batchLabel(c) %></strong></a></td>
+            <td class="num"><%= c.students %></td>
+            <td class="num"><%= u.inr(c.billed) %></td>
+            <td class="num"><%= u.inr(c.collected) %></td>
+            <td class="num" style="<%= c.outstanding > 0 ? 'color: var(--danger); font-weight: 600;' : '' %>"><%= u.inr(c.outstanding) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td class="num"><%= classes.reduce((t, c) => t + c.students, 0) %></td>
+          <td class="num"><%= u.inr(classes.reduce((t, c) => t + c.billed, 0)) %></td>
+          <td class="num"><%= u.inr(classes.reduce((t, c) => t + c.collected, 0)) %></td>
+          <td class="num"><%= u.inr(classes.reduce((t, c) => t + c.outstanding, 0)) %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<%- include('partials/foot', { scripts: ['/static/vendor/chart.umd.min.js', '/static/js/dashboard.js'] }) %>

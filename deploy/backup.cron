@@ -1,0 +1,2 @@
+# /etc/cron.d/tuition-backup — nightly database backup at 23:30, keeps the latest 30
+30 23 * * * tuition cd /opt/tuition && /usr/bin/node scripts/backup.js >> /opt/tuition/backups/backup.log 2>&1

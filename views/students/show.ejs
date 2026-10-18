@@ -1,0 +1,126 @@
+<%- include('../partials/head') %>
+<%
+  const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : null);
+  const statusBadge = { paid: 'badge-paid', partial: 'badge-partial', due: 'badge-due', waived: '' };
+  const statusText = { paid: 'Paid', partial: 'Part paid', due: 'Due', waived: 'Waived' };
+  const pendingCount = dues.filter((d) => d.status === 'due' || d.status === 'partial').length;
+%>
+<a class="back" href="/students?batch=<%= student.batch_id %>"><%- include('../partials/icon', { name: 'back' }) %> Students</a>
+
+<div class="page-head">
+  <div class="profile-head">
+    <span class="avatar"><%= student.name.charAt(0).toUpperCase() %></span>
+    <div>
+      <h1><%= student.name %></h1>
+      <div class="sub">
+        <span class="badge badge-class">Class <%= u.batchLabel(student) %></span>
+        <% if (student.roll_no) { %> Roll <%= student.roll_no %><% } %>
+        <% if (student.status === 'inactive') { %> <span class="badge">Left <%= u.dateLabel(student.left_on) %></span><% } %>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/students/<%= student.id %>/edit"><%- include('../partials/icon', { name: 'edit' }) %> Edit</a>
+  </div>
+</div>
+
+<section class="card balance-card">
+  <div>
+    <div class="muted small"><%= balance < 0 ? 'Advance paid' : 'Pending amount' %></div>
+    <div class="amount <%= balance > 0 ? 'due' : 'clear' %>"><%= u.inr(Math.abs(balance)) %></div>
+    <div class="muted small">
+      <% if (balance > 0) { %><%= pendingCount %> month<%= pendingCount === 1 ? '' : 's' %> pending · <% } %>
+      <%= u.inr(student.monthly_fee) %>/month
+    </div>
+  </div>
+  <div class="actions">
+    <a class="btn btn-success btn-lg" href="/collect/<%= student.id %>"><%- include('../partials/icon', { name: 'rupee' }) %> Collect fee</a>
+  </div>
+</section>
+
+<div class="grid grid-1-2" style="margin-top: 16px;">
+  <div class="stack">
+    <section class="card">
+      <div class="card-head"><h2>Details</h2></div>
+      <dl class="kv">
+        <dt>Parent</dt><dd><%= student.guardian_name || '—' %></dd>
+        <dt>Parent phone</dt><dd><% if (student.guardian_phone) { %><a href="tel:<%= student.guardian_phone %>"><%= student.guardian_phone %></a><% } else { %>—<% } %></dd>
+        <dt>Student phone</dt><dd><% if (student.phone) { %><a href="tel:<%= student.phone %>"><%= student.phone %></a><% } else { %>—<% } %></dd>
+        <dt>Joined</dt><dd><%= u.dateLabel(student.joined_on) %></dd>
+        <% if (student.address) { %><dt>Address</dt><dd><%= student.address %></dd><% } %>
+      </dl>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Attendance</h2><a href="/attendance/report?batch=<%= student.batch_id %>">Class report</a></div>
+      <dl class="kv">
+        <dt>This month</dt>
+        <dd><% if (att.monthTotal) { %><%= att.monthPresent %>/<%= att.monthTotal %> days · <%= pct(att.monthPresent, att.monthTotal) %>%<% } else { %>Not marked yet<% } %></dd>
+        <dt>Overall</dt>
+        <dd><% if (att.total) { %><%= att.present %>/<%= att.total %> days · <%= pct(att.present, att.total) %>%<% } else { %>—<% } %></dd>
+        <% if (recentAbsences.length) { %>
+          <dt>Last absent</dt><dd><%= recentAbsences.map((a) => u.dateLabel(a.date)).join(', ') %></dd>
+        <% } %>
+      </dl>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card flush" id="receipts">
+      <div class="card-head"><h2>Payments &amp; receipts</h2><span class="muted small">Total paid <%= u.inr(totalPaid) %></span></div>
+      <% if (!payments.length) { %>
+        <div class="empty">No payments yet</div>
+      <% } else { %>
+      <ul class="list" style="margin-top: 12px; border-top: 1px solid var(--border);">
+        <% payments.forEach((p) => { %>
+          <li class="list-item">
+            <a class="list-main" href="/payments/<%= p.id %>" style="color: inherit;">
+              <div class="list-title">
+                <span class="num" style="<%= p.voided ? 'text-decoration: line-through; color: var(--muted);' : '' %>"><%= u.inr(p.amount) %></span>
+                <span class="muted small" style="font-weight: 500;"> · <%= p.receipt_no %></span>
+                <% if (p.voided) { %><span class="badge badge-due">Cancelled</span><% } %>
+              </div>
+              <div class="list-sub"><%= u.dateLabel(p.paid_on) %> · <%= p.mode %></div>
+              <% if (!p.voided && p.covers) { %><div class="list-sub" style="white-space: normal;"><%= p.covers %></div><% } %>
+            </a>
+            <a class="btn btn-sm" href="/payments/<%= p.id %>/receipt.pdf" aria-label="Download receipt <%= p.receipt_no %> as PDF"><%- include('../partials/icon', { name: 'download' }) %> PDF</a>
+          </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </section>
+
+    <section class="card flush" id="dues">
+      <div class="card-head"><h2>Monthly fees</h2><span class="muted small">Total charged <%= u.inr(totalDue) %></span></div>
+      <% if (!dues.length) { %>
+        <div class="empty">No fees charged yet</div>
+      <% } else { %>
+      <div class="table-wrap" style="margin-top: 12px;">
+        <table>
+          <thead><tr><th>Month</th><th class="num">Fee</th><th class="num hide-sm">Paid</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <% dues.forEach((d) => { %>
+              <tr>
+                <td class="nowrap"><%= d.label %></td>
+                <td class="num"><%= u.inr(d.amount) %></td>
+                <td class="num hide-sm"><%= d.waived ? '—' : u.inr(d.settled) %></td>
+                <td><span class="badge <%= statusBadge[d.status] %>"><%= statusText[d.status] %></span></td>
+                <td class="right">
+                  <% if (d.waived || d.status !== 'paid') { %>
+                  <form class="inline-form" method="post" action="/students/<%= student.id %>/dues/<%= d.month %>/waive"
+                        data-confirm="<%= d.waived ? `Charge the fee for ${d.label} again?` : `Waive the fee for ${d.label}? It will no longer be counted as pending.` %>">
+                    <input type="hidden" name="waived" value="<%= d.waived ? '0' : '1' %>">
+                    <button class="link-btn" type="submit"><%= d.waived ? 'Undo waive' : 'Waive' %></button>
+                  </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+    </section>
+  </div>
+</div>
+<%- include('../partials/foot') %>
