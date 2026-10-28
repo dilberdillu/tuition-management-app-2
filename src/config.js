@@ -24,4 +24,15 @@ module.exports = {
     phone: process.env.CENTER_PHONE || '',
   },
   paymentModes: ['Cash', 'UPI', 'Bank', 'Cheque'],
+  // Mode recorded for fees paid through an online payment link (never chosen by hand).
+  onlineMode: 'Online',
+  // Base address for links sent to parents, e.g. https://fees.example.com. Defaults to the request's host.
+  publicUrl: (process.env.PUBLIC_URL || '').replace(/\/+$/, ''),
+  // Online payments through Dodo Payments. Disabled when no API key is set.
+  dodo: {
+    apiKey: process.env.DODO_PAYMENTS_API_KEY || '',
+    webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_KEY || '',
+    // Anything other than an explicit live_mode stays in test mode, so a typo can never charge real money.
+    environment: process.env.DODO_PAYMENTS_ENVIRONMENT === 'live_mode' ? 'live_mode' : 'test_mode',
+  },
 };

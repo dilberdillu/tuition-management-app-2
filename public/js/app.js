@@ -59,6 +59,25 @@
     });
   });
 
+  // Payment links: copy, or open the phone's share sheet (WhatsApp, SMS...) where available.
+  const copyText = (btn, text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      const label = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(() => { btn.textContent = label; }, 1500);
+    });
+  };
+  document.querySelectorAll('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', () => copyText(btn, document.querySelector(btn.dataset.copy).value));
+  });
+  document.querySelectorAll('[data-share]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const url = document.querySelector(btn.dataset.share).value;
+      if (navigator.share) navigator.share({ title: btn.dataset.shareTitle, url }).catch(() => {});
+      else copyText(btn, url);
+    });
+  });
+
   // Attendance: live present/absent counts and "mark all" buttons.
   const attForm = document.getElementById('attForm');
   if (attForm) {

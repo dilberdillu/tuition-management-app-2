@@ -130,4 +130,10 @@ function studentBalances({ status = 'active', batchId = null } = {}) {
   return db.prepare(sql).all(...params);
 }
 
-module.exports = { ensureDues, syncStudent, ledger, recordPayment, studentBalances };
+// A payment with the student details a receipt needs.
+const getPayment = (id) => db.prepare(`
+  SELECT p.*, s.name AS student_name, s.roll_no, s.guardian_name, b.class_no, b.division
+  FROM payments p JOIN students s ON s.id = p.student_id JOIN batches b ON b.id = s.batch_id
+  WHERE p.id = ?`).get(id);
+
+module.exports = { ensureDues, syncStudent, ledger, recordPayment, studentBalances, getPayment };

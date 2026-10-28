@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { studentBalances, syncStudent, ledger } = require('../fees');
+const online = require('../online');
 const { today, currentMonth, isValidDate, isValidMonth } = require('../util');
 
 const router = express.Router();
@@ -87,6 +88,7 @@ router.get('/students/:id', (req, res, next) => {
     SELECT date FROM attendance WHERE student_id = ? AND status = 'A' ORDER BY date DESC LIMIT 5`).all(student.id);
   res.render('students/show', {
     title: student.name, student, ...led, dues: led.dues.slice().reverse(), payments, att, recentAbsences,
+    payLinks: online.linksForStudent(student.id).filter((l) => l.state === 'pending'),
   });
 });
 

@@ -66,6 +66,23 @@
   </div>
 
   <div class="stack">
+    <% if (payLinks.length) { %>
+    <section class="card flush">
+      <div class="card-head"><h2>Waiting for online payment</h2></div>
+      <ul class="list" style="margin-top: 12px; border-top: 1px solid var(--border);">
+        <% payLinks.forEach((l) => { %>
+          <li class="list-item">
+            <a class="list-main" href="/pay-links/<%= l.id %>" style="color: inherit;">
+              <div class="list-title"><span class="num"><%= u.inr(l.amount) %></span> <span class="badge badge-partial">Link sent</span></div>
+              <div class="list-sub">Created <%= new Date(`${l.created_at.replace(' ', 'T')}Z`).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) %></div>
+            </a>
+            <a class="btn btn-sm" href="/pay-links/<%= l.id %>">Open</a>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% } %>
+
     <section class="card flush" id="receipts">
       <div class="card-head"><h2>Payments &amp; receipts</h2><span class="muted small">Total paid <%= u.inr(totalPaid) %></span></div>
       <% if (!payments.length) { %>

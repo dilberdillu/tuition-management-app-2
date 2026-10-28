@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1f5f8b">
+  <meta name="robots" content="noindex">
+  <title><%= title %> · <%= center.name %></title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <main class="login-page">
+    <div class="card login-card pay-card">
+      <div class="brand"><span class="brand-mark">₹</span><span><%= center.name %></span></div>
+      <% if (testMode) { %><div class="notice">Test mode: no real money is charged.</div><% } %>
+
+      <% if (link.status === 'paid' && payment) { %>
+        <div class="receipt-success">
+          <div class="tick"><%- include('../partials/icon', { name: 'check' }) %></div>
+          <h1>Payment received</h1>
+        </div>
+        <div class="receipt-amount"><%= u.inr(payment.amount) %></div>
+        <dl class="kv">
+          <dt>Student</dt><dd><%= payment.student_name %> · <%= u.batchLabel(payment) %></dd>
+          <dt>Receipt</dt><dd><%= payment.receipt_no %></dd>
+          <dt>Date</dt><dd><%= u.dateLabel(payment.paid_on) %></dd>
+          <dt>Towards</dt><dd><%= payment.covers || 'Tuition fee' %></dd>
+        </dl>
+        <a class="btn btn-primary btn-lg btn-block" href="/pay/<%= link.token %>/receipt.pdf"><%- include('../partials/icon', { name: 'download' }) %> Download receipt</a>
+        <p class="muted small">Thank you!</p>
+
+      <% } else if (link.state === 'pending') { %>
+        <h1 style="font-size: 1.2rem;">Tuition fee</h1>
+        <div class="receipt-amount"><%= u.inr(link.amount) %></div>
+        <dl class="kv">
+          <dt>Student</dt><dd><%= link.student_name %> · <%= u.batchLabel(link) %></dd>
+        </dl>
+        <% if (returnStatus && !['failed', 'cancelled', 'expired'].includes(returnStatus)) { %>
+          <%# Back from checkout but not confirmed yet: don't offer to pay again. %>
+          <div class="notice">We are confirming your payment. This can take a minute.</div>
+          <a class="btn btn-lg btn-block" href="/pay/<%= link.token %>?status=<%= encodeURIComponent(returnStatus) %>">Refresh</a>
+        <% } else { %>
+          <% if (returnStatus) { %>
+            <div class="errors">The payment did not go through. You can try again.</div>
+          <% } %>
+          <a class="btn btn-success btn-lg btn-block" href="<%= link.checkout_url %>">Pay <%= u.inr(link.amount) %></a>
+          <p class="muted small">UPI or card. Payment is processed securely by Dodo Payments.</p>
+        <% } %>
+
+      <% } else { %>
+        <h1 style="font-size: 1.2rem;"><%= link.state === 'expired' ? 'This payment link has expired' : 'This payment link is no longer active' %></h1>
+        <p class="muted">Please ask <%= center.name %> for a new link<%= center.phone ? ` (${center.phone})` : '' %>.</p>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

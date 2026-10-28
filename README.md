@@ -9,6 +9,7 @@ It runs on Node.js + Express, stores data in SQLite, and renders its pages on th
 - **Quick fee collection:** search a student, the amount is pre-filled with what they owe, pick Cash/UPI/Bank/Cheque, and save. A PDF receipt is ready to download straight away.
 - **Fee ledger:** a monthly fee is charged automatically for every active student from their joining month. Payments settle the oldest month first. Partial and advance payments both work. Single months can be waived.
 - **Student profile:** pending amount, month-by-month fee status, every receipt (downloadable PDF) and an attendance summary.
+- **Online payments (optional):** from the collect screen, send the parent a payment link. They pay by UPI or card through Dodo Payments, and the fee is recorded with its receipt automatically. See *Online payments* below.
 - **Receipts:** numbered per year (`R2026-0001`). A receipt is never deleted, only cancelled, so the numbering has no gaps.
 - **Attendance:** pick a class, everyone starts as present, tap the absentees, save. There's also a monthly report per class.
 - **Reports:** collections for any date range, filterable by class and mode, with CSV export.
@@ -93,6 +94,22 @@ sudo systemctl restart tuition
 - **Waive** a month from the student's profile (e.g. a holiday month or a late join).
 - To fix a mistaken payment, open the receipt and choose **Cancel this receipt**, then record it again.
 
+## Online payments (Dodo Payments)
+
+Turned on when `DODO_PAYMENTS_API_KEY` is set (see `.env.example`). Leave it empty to hide the feature.
+
+1. On the collect screen, enter the amount and choose **Send online payment link instead**.
+2. Share the link (`/pay/<token>`) with the parent. It works for 24 hours. The page shows the student, the amount and a **Pay** button that opens Dodo's checkout (UPI or card).
+3. When Dodo confirms the payment, the app records it as mode **Online**, with the Dodo payment id as the reference. The parent's page then shows a downloadable receipt.
+
+How the payment is confirmed:
+- **Webhook (recommended):** in the Dodo dashboard add the endpoint `https://<your-domain>/webhooks/dodo` for the `payment.succeeded` event, and put its signing secret in `DODO_PAYMENTS_WEBHOOK_KEY`.
+- Without a webhook, the app asks the Dodo API whenever the parent returns from checkout or someone opens the link. This also works on a laptop, where Dodo can't reach the webhook.
+
+A payment is recorded only once, even if Dodo sends the webhook again. Each fee amount becomes one Dodo product the first time it's used (Dodo charges a product's fixed price, priced in INR and tax inclusive).
+
+Testing: use a `dodo_test_` key with `DODO_PAYMENTS_ENVIRONMENT=test_mode` and Dodo's test card `4242 4242 4242 4242` (any future expiry and CVV). Switch to a live key and `live_mode` only when the Dodo account is approved for live payments.
+
 ## Project layout
 
 ```
@@ -101,7 +118,8 @@ src/config.js        Environment settings
 src/db.js            SQLite schema (created automatically)
 src/fees.js          Dues generation, ledger, payment recording
 src/receipt.js       PDF receipt (pdfkit)
-src/routes/          Dashboard, students, fees/reports, attendance, settings, auth
+src/online.js        Online payment links (Dodo Payments)
+src/routes/          Dashboard, students, fees/reports, attendance, settings, auth, online payments
 views/               EJS templates
 public/              CSS, small JS enhancements
 scripts/             create-admin, seed-demo, backup

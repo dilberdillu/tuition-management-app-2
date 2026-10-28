@@ -78,6 +78,31 @@ db.exec(`
     PRIMARY KEY (student_id, date)
   );
   CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date);
+
+  -- Online payment links (Dodo Payments checkout sessions). The parent opens /pay/<token>.
+  -- A payment row is created only once Dodo confirms the payment.
+  CREATE TABLE IF NOT EXISTS pay_links (
+    id INTEGER PRIMARY KEY,
+    token TEXT NOT NULL UNIQUE,
+    student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    environment TEXT NOT NULL,        -- test_mode / live_mode
+    session_id TEXT NOT NULL UNIQUE,
+    checkout_url TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'cancelled')),
+    dodo_payment_id TEXT UNIQUE,
+    payment_id INTEGER REFERENCES payments(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_pay_links_student ON pay_links(student_id);
+
+  -- One Dodo product per fee amount (Dodo charges a product's fixed price).
+  CREATE TABLE IF NOT EXISTS dodo_products (
+    environment TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    product_id TEXT NOT NULL,
+    PRIMARY KEY (environment, amount)
+  );
 `);
 
 // Create the 12 standard classes (8A..10D) on first run.

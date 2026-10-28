@@ -6,6 +6,8 @@ const config = require('./src/config');
 require('./src/db');
 const util = require('./src/util');
 const { requireLogin, sameOrigin } = require('./src/auth');
+const online = require('./src/online');
+const onlineRoutes = require('./src/routes/online');
 
 const app = express();
 
@@ -26,6 +28,8 @@ app.use(helmet({
   // "no-referrer" makes browsers send `Origin: null` on form posts, which sameOrigin() rejects.
   referrerPolicy: { policy: 'same-origin' },
 }));
+// Dodo Payments webhook: needs the raw body for its signature, and comes from Dodo, not a browser.
+app.post('/webhooks/dodo', express.raw({ type: 'application/json', limit: '1mb' }), onlineRoutes.webhook);
 app.use(express.urlencoded({ extended: false, limit: '100kb' }));
 app.use(cookieSession({
   name: 'tm_session',
@@ -48,6 +52,7 @@ app.use((req, res, next) => {
   res.locals.center = config.center;
   res.locals.user = req.session.user || null;
   res.locals.path = req.path;
+  res.locals.onlineEnabled = online.enabled;
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
   req.flash = (type, message) => { req.session.flash = { type, message }; };
@@ -55,12 +60,14 @@ app.use((req, res, next) => {
 });
 
 app.use(require('./src/routes/auth'));
+app.use(onlineRoutes.publicRouter);
 app.use(requireLogin);
 app.use(require('./src/routes/dashboard'));
 app.use(require('./src/routes/students'));
 app.use(require('./src/routes/fees'));
 app.use(require('./src/routes/attendance'));
 app.use(require('./src/routes/settings'));
+app.use(onlineRoutes.router);
 
 app.use((req, res) => {
   res.status(404).render('error', { title: 'Not found', message: 'That page does not exist.' });

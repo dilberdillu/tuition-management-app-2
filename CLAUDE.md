@@ -4,6 +4,7 @@ Node.js + Express + SQLite (better-sqlite3) app with server-rendered EJS views. 
 
 - Entry point: `server.js`. Settings come from environment variables (`src/config.js`).
 - Schema is created automatically in `src/db.js`. Fee ledger logic is in `src/fees.js`.
+- Online payments (Dodo Payments) are in `src/online.js` and `src/routes/online.js`; see README "Online payments". Keys come from `DODO_PAYMENTS_*` env vars (local: `.env`, gitignored). Never put keys in `.env.example`.
 - Local dev: `npm run dev`. Demo data: `DB_PATH=data/demo.db npm run seed-demo`.
 
 ## Deployment

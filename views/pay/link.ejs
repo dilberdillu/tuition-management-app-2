@@ -1,0 +1,58 @@
+<%- include('../partials/head') %>
+<%
+  const stateText = { pending: 'Waiting for payment', paid: 'Paid', expired: 'Expired', cancelled: 'Cancelled' };
+  const stateBadge = { pending: 'badge-partial', paid: 'badge-paid', expired: '', cancelled: '' };
+  const created = new Date(`${link.created_at.replace(' ', 'T')}Z`).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+%>
+<div class="receipt">
+  <a class="back" href="/students/<%= link.student_id %>"><%- include('../partials/icon', { name: 'back' }) %> <%= link.student_name %></a>
+
+  <% if (testMode) { %>
+    <div class="notice">Test mode: no real money is charged. Pay with Dodo's test card 4242 4242 4242 4242 and any future date and CVV.</div>
+  <% } %>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <div class="muted small">Online payment link</div>
+        <h2><%= link.student_name %> · <%= u.batchLabel(link) %></h2>
+      </div>
+      <span class="badge <%= stateBadge[link.state] %>"><%= stateText[link.state] %></span>
+    </div>
+    <div class="receipt-amount"><%= u.inr(link.amount) %></div>
+    <div class="muted small">Created <%= created %></div>
+  </section>
+
+  <% if (link.state === 'paid') { %>
+    <div class="stack" style="margin-top: 16px;">
+      <a class="btn btn-primary btn-lg btn-block" href="/payments/<%= link.payment_id %>"><%- include('../partials/icon', { name: 'file' }) %> View receipt</a>
+    </div>
+  <% } else if (link.state === 'pending') { %>
+    <section class="card" style="margin-top: 16px;">
+      <div class="field">
+        <label for="shareUrl">Send this link to the parent</label>
+        <input id="shareUrl" class="share-url" value="<%= shareUrl %>" readonly>
+        <div class="hint">They can pay by UPI or card. It works for <%= linkHours %> hours, and the fee is recorded here automatically once paid.</div>
+      </div>
+      <div class="grid grid-2" style="gap: 10px;">
+        <button type="button" class="btn btn-primary btn-block" data-share="#shareUrl" data-share-title="Fee payment for <%= link.student_name %>">Share link</button>
+        <button type="button" class="btn btn-block" data-copy="#shareUrl">Copy link</button>
+      </div>
+    </section>
+    <div class="stack" style="margin-top: 16px;">
+      <a class="btn btn-block" href="/pay/<%= link.token %>" target="_blank" rel="noopener">Open payment page (pay on this phone)</a>
+      <a class="btn btn-block" href="/pay-links/<%= link.id %>">Check payment status</a>
+    </div>
+    <details class="no-print" style="margin-top: 28px;">
+      <summary>Cancel this link</summary>
+      <form method="post" action="/pay-links/<%= link.id %>/cancel" class="card" style="margin-top: 10px;"
+            data-confirm="Cancel this payment link? The parent will no longer be able to pay with it.">
+        <button class="btn btn-danger btn-block" type="submit">Cancel link</button>
+      </form>
+    </details>
+  <% } else { %>
+    <p class="muted">This link can no longer be paid. If the parent still needs to pay, create a new link.</p>
+    <a class="btn btn-primary btn-lg btn-block" href="/collect/<%= link.student_id %>"><%- include('../partials/icon', { name: 'rupee' }) %> Collect fee</a>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

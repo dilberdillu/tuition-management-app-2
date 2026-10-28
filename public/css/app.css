@@ -267,6 +267,12 @@ details summary { cursor: pointer; color: var(--muted); font-size: .88rem; }
 .login-card { width: 100%; max-width: 380px; }
 .login-card .brand { justify-content: center; margin-bottom: 18px; font-size: 1.1rem; }
 
+/* ---------- Online payment links ---------- */
+.notice { background: var(--warn-soft); color: var(--warn); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px; font-size: .9rem; }
+.share-url { font-size: .9rem; }
+.pay-card { text-align: center; }
+.pay-card .kv { text-align: left; margin: 16px 0; }
+
 /* ---------- Print ---------- */
 @media print {
   .topbar, .bottomnav, .no-print, .flash { display: none !important; }

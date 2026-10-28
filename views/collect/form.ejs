@@ -74,6 +74,12 @@
     <div class="sticky-submit">
       <button class="btn btn-success btn-lg btn-block" type="submit"><%- include('../partials/icon', { name: 'check' }) %> Save payment</button>
     </div>
+    <% if (onlineEnabled) { %>
+      <div style="margin-top: 12px;">
+        <button class="btn btn-block" type="submit" formaction="/collect/<%= student.id %>/link">Send online payment link instead</button>
+        <div class="hint muted small" style="margin-top: 6px;">For the amount above. The parent pays by UPI or card, and the fee is recorded automatically.</div>
+      </div>
+    <% } %>
   </form>
 </div>
 <%- include('../partials/foot') %>

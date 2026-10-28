@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const config = require('../config');
-const { studentBalances, recordPayment, ledger, syncStudent } = require('../fees');
+const { studentBalances, recordPayment, ledger, syncStudent, getPayment } = require('../fees');
 const { writeReceipt } = require('../receipt');
 const { today, currentMonth, isValidDate, batchLabel } = require('../util');
 
@@ -10,11 +10,6 @@ const router = express.Router();
 const getStudent = (id) => db.prepare(`
   SELECT s.*, b.class_no, b.division, b.monthly_fee
   FROM students s JOIN batches b ON b.id = s.batch_id WHERE s.id = ?`).get(id);
-
-const getPayment = (id) => db.prepare(`
-  SELECT p.*, s.name AS student_name, s.roll_no, s.guardian_name, b.class_no, b.division
-  FROM payments p JOIN students s ON s.id = p.student_id JOIN batches b ON b.id = s.batch_id
-  WHERE p.id = ?`).get(id);
 
 // Step 1 of quick collect: find the student.
 router.get('/collect', (req, res) => {
@@ -114,7 +109,8 @@ router.post('/payments/:id/void', (req, res, next) => {
 router.get('/reports', (req, res) => {
   const from = isValidDate(req.query.from) ? req.query.from : `${currentMonth()}-01`;
   const to = isValidDate(req.query.to) ? req.query.to : today();
-  const mode = config.paymentModes.includes(req.query.mode) ? req.query.mode : '';
+  const modes = [...config.paymentModes, config.onlineMode];
+  const mode = modes.includes(req.query.mode) ? req.query.mode : '';
   const batchId = Number(req.query.batch) || null;
 
   const where = ['p.voided = 0', 'p.paid_on BETWEEN ? AND ?'];
@@ -144,7 +140,7 @@ router.get('/reports', (req, res) => {
   const batches = db.prepare('SELECT * FROM batches ORDER BY class_no, division').all();
   const query = new URLSearchParams({ from, to, mode, batch: batchId || '' }).toString();
   res.render('reports', {
-    title: 'Reports', payments, total, byMode, from, to, mode, batchId, batches, modes: config.paymentModes, query,
+    title: 'Reports', payments, total, byMode, from, to, mode, batchId, batches, modes, query,
   });
 });
 
