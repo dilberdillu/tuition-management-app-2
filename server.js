@@ -7,6 +7,7 @@ require('./src/db');
 const util = require('./src/util');
 const { requireLogin, sameOrigin } = require('./src/auth');
 const online = require('./src/online');
+const analytics = require('./src/analytics');
 const onlineRoutes = require('./src/routes/online');
 
 const app = express();
@@ -23,6 +24,8 @@ app.use(helmet({
       styleSrc: ["'self'"],
       styleSrcAttr: ["'unsafe-inline'"], // progress bar widths etc.
       imgSrc: ["'self'", 'data:'],
+      // PostHog's script is served from here; only its event endpoints are contacted.
+      connectSrc: ["'self'", ...(analytics.enabled ? [config.posthog.host, 'https://*.posthog.com'] : [])],
     },
   },
   // "no-referrer" makes browsers send `Origin: null` on form posts, which sameOrigin() rejects.
@@ -45,6 +48,12 @@ app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: conf
 app.use('/static/vendor', express.static(path.join(__dirname, 'node_modules', 'chart.js', 'dist'), {
   maxAge: config.isProd ? '30d' : 0,
 }));
+// The "no-external" build includes session replay and never loads scripts from PostHog's servers.
+app.get('/static/vendor/posthog.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'node_modules', 'posthog-js', 'dist', 'array.full.no-external.js'), {
+    maxAge: config.isProd ? '30d' : 0,
+  });
+});
 
 // Helpers and per-request values available in every view.
 app.use((req, res, next) => {
@@ -53,6 +62,7 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.path = req.path;
   res.locals.onlineEnabled = online.enabled;
+  res.locals.posthog = analytics.enabled ? { ...config.posthog, env: config.isProd ? 'production' : 'development' } : null;
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
   req.flash = (type, message) => { req.session.flash = { type, message }; };
@@ -75,9 +85,19 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
   console.error(err);
+  analytics.captureException(err, req);
   res.status(500).render('error', { title: 'Something went wrong', message: 'Please try again.' });
 });
 
-app.listen(config.port, config.host, () => {
+const server = app.listen(config.port, config.host, () => {
   console.log(`Tuition manager running on http://${config.host}:${config.port}`);
 });
+
+// On stop/restart, finish open requests and send any queued analytics events.
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.on(signal, () => {
+    server.close();
+    analytics.shutdown().finally(() => process.exit(0));
+    setTimeout(() => process.exit(0), 5000).unref();
+  });
+}

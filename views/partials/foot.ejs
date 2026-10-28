@@ -1,5 +1,9 @@
 </main>
 <script src="/static/js/app.js"></script>
+<% if (locals.posthog && locals.user) { %>
+<script src="/static/vendor/posthog.js"></script>
+<script src="/static/js/analytics.js" data-key="<%= posthog.key %>" data-host="<%= posthog.host %>" data-user="<%= user.username %>" data-env="<%= posthog.env %>"></script>
+<% } %>
 <% (locals.scripts || []).forEach((src) => { %><script src="<%= src %>"></script>
 <% }) %>
 </body>

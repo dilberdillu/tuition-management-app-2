@@ -7,7 +7,8 @@ const DodoPayments = require('dodopayments');
 const db = require('./db');
 const config = require('./config');
 const { recordPayment } = require('./fees');
-const { isoDate } = require('./util');
+const { isoDate, batchLabel } = require('./util');
+const analytics = require('./analytics');
 
 const enabled = Boolean(config.dodo.apiKey);
 const client = enabled
@@ -133,13 +134,24 @@ const applyPayment = db.transaction((linkId, payment) => {
   return paymentId;
 });
 
+// Apply a confirmed payment; report it to analytics only the first time it is recorded.
+function confirmPayment(linkId, payment, confirmedBy) {
+  const before = stmt.link.get(linkId);
+  const paymentId = applyPayment(linkId, payment);
+  if (paymentId && before && before.status !== 'paid') {
+    const props = { amount: before.amount, mode: config.onlineMode, class: batchLabel(before) };
+    analytics.trackPayLink(linkId, 'fee_collected', props);
+    analytics.trackPayLink(linkId, 'pay_link_paid', { ...props, confirmed_by: confirmedBy });
+  }
+}
+
 // Ask Dodo whether a pending link has been paid. Safe to call often; never throws.
 async function refreshLink(link) {
   if (!enabled || !link || link.status === 'paid' || link.environment !== config.dodo.environment) return link;
   try {
     const session = await client.checkoutSessions.retrieve(link.session_id);
     if (session.payment_id && session.payment_status === 'succeeded') {
-      applyPayment(link.id, await client.payments.retrieve(session.payment_id));
+      confirmPayment(link.id, await client.payments.retrieve(session.payment_id), 'api');
       return getLink(link.id);
     }
   } catch (err) {
@@ -165,7 +177,7 @@ function applyWebhook(event) {
   const payment = event.data;
   const row = (payment.metadata?.pay_link && stmt.linkIdByToken.get(payment.metadata.pay_link))
     || (payment.checkout_session_id && stmt.linkIdBySession.get(payment.checkout_session_id));
-  if (row) applyPayment(row.id, payment);
+  if (row) confirmPayment(row.id, payment, 'webhook');
 }
 
 const cancelLink = (id) => stmt.cancel.run(id).changes > 0;

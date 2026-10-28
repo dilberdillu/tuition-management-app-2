@@ -28,6 +28,11 @@ module.exports = {
   onlineMode: 'Online',
   // Base address for links sent to parents, e.g. https://fees.example.com. Defaults to the request's host.
   publicUrl: (process.env.PUBLIC_URL || '').replace(/\/+$/, ''),
+  // Usage analytics with PostHog. Disabled when no project key is set.
+  posthog: {
+    key: process.env.POSTHOG_KEY || '',
+    host: (process.env.POSTHOG_HOST || 'https://us.i.posthog.com').replace(/\/+$/, ''),
+  },
   // Online payments through Dodo Payments. Disabled when no API key is set.
   dodo: {
     apiKey: process.env.DODO_PAYMENTS_API_KEY || '',

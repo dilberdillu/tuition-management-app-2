@@ -4,6 +4,7 @@ const config = require('../config');
 const online = require('../online');
 const { getPayment } = require('../fees');
 const { writeReceipt } = require('../receipt');
+const analytics = require('../analytics');
 
 const baseUrl = (req) => config.publicUrl || `${req.protocol}://${req.get('host')}`;
 
@@ -35,6 +36,7 @@ publicRouter.get('/pay/:token', async (req, res) => {
   if (!link) return notFound(res);
   if (link.status !== 'paid') link = await online.refreshLink(link);
   const payment = link.payment_id ? getPayment(link.payment_id) : null;
+  analytics.trackPayLink(link.id, 'pay_page_opened', { state: link.state, return_status: String(req.query.status || '').slice(0, 40) || null });
   res.set('X-Robots-Tag', 'noindex');
   res.render('pay/public', {
     title: link.status === 'paid' ? 'Payment received' : 'Pay fee',
@@ -52,7 +54,9 @@ publicRouter.get('/pay/:token/checkout', async (req, res) => {
   link = await online.refreshLink(link);
   if (link.state !== 'pending') return res.redirect(`/pay/${link.token}`);
   try {
-    res.redirect(await online.checkoutUrl(link, baseUrl(req)));
+    const url = await online.checkoutUrl(link, baseUrl(req));
+    analytics.trackPayLink(link.id, 'pay_checkout_started', { amount: link.amount, retry: url !== link.checkout_url });
+    res.redirect(url);
   } catch (err) {
     console.error(`Could not open checkout for pay link ${link.id}:`, err.status || '', err.message);
     res.status(503).render('error', { title: 'Payment page unavailable', message: 'Please try again in a minute.' });
@@ -63,6 +67,7 @@ publicRouter.get('/pay/:token/receipt.pdf', (req, res) => {
   const link = online.getLinkByToken(req.params.token);
   const payment = link && link.payment_id ? getPayment(link.payment_id) : null;
   if (!payment) return notFound(res);
+  analytics.trackPayLink(link.id, 'parent_receipt_downloaded');
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="Receipt-${payment.receipt_no}.pdf"`);
   writeReceipt(res, payment);
@@ -86,6 +91,7 @@ router.post('/collect/:id/link', async (req, res, next) => {
   }
   try {
     const id = await online.createLink(student, amount, baseUrl(req));
+    analytics.track(req, 'pay_link_created', { amount, class: `${student.class_no}-${student.division}`, pay_link_id: Number(id) });
     res.redirect(`/pay-links/${id}`);
   } catch (err) {
     console.error('Could not create Dodo checkout:', err.status || '', err.message);
@@ -110,7 +116,10 @@ router.get('/pay-links/:id', async (req, res, next) => {
 router.post('/pay-links/:id/cancel', (req, res, next) => {
   const link = online.getLink(req.params.id);
   if (!link) return next();
-  if (online.cancelLink(link.id)) req.flash('success', 'Payment link cancelled.');
+  if (online.cancelLink(link.id)) {
+    analytics.track(req, 'pay_link_cancelled', { amount: link.amount, pay_link_id: link.id });
+    req.flash('success', 'Payment link cancelled.');
+  }
   res.redirect(`/pay-links/${link.id}`);
 });
 

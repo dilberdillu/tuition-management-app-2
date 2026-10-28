@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const analytics = require('../analytics');
 const { today, currentMonth, isValidDate, isValidMonth, batchLabel, monthsBetween, addMonths } = require('../util');
 
 const router = express.Router();
@@ -52,6 +53,7 @@ router.post('/attendance', (req, res, next) => {
     for (const s of students) upsert.run(s.id, date, present.has(s.id) ? 'P' : 'A');
   })();
   const p = students.filter((s) => present.has(s.id)).length;
+  analytics.track(req, 'attendance_saved', { class: batchLabel(batch), present: p, absent: students.length - p, backdated: date !== today() });
   req.flash('success', `${batchLabel(batch)} saved: ${p} present, ${students.length - p} absent.`);
   res.redirect(`/attendance?date=${date}`);
 });

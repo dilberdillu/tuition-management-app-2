@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const auth = require('../auth');
+const analytics = require('../analytics');
 const { currentMonth, batchLabel } = require('../util');
 
 const router = express.Router();
@@ -37,6 +38,7 @@ router.post('/settings/fees', (req, res) => {
       changed += 1;
     }
   })();
+  if (changed) analytics.track(req, 'class_fees_updated', { classes_changed: changed, include_current_month: includeCurrent });
   if (errors.length) req.flash('error', `Invalid fee for ${errors.join(', ')}. Other changes were saved.`);
   else req.flash('success', changed ? `Fees updated for ${changed} class${changed > 1 ? 'es' : ''}.` : 'No changes.');
   res.redirect('/settings');
@@ -51,6 +53,7 @@ router.post('/settings/password', (req, res) => {
   else if (password !== confirm) passwordError = 'New passwords do not match.';
   if (passwordError) return render(res.status(400), { passwordError });
   auth.setPassword(username, password);
+  analytics.track(req, 'password_changed');
   req.flash('success', 'Password changed.');
   res.redirect('/settings');
 });

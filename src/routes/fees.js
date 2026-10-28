@@ -3,6 +3,7 @@ const db = require('../db');
 const config = require('../config');
 const { studentBalances, recordPayment, ledger, syncStudent, getPayment } = require('../fees');
 const { writeReceipt } = require('../receipt');
+const analytics = require('../analytics');
 const { today, currentMonth, isValidDate, batchLabel } = require('../util');
 
 const router = express.Router();
@@ -75,6 +76,7 @@ router.post('/collect/:id', (req, res, next) => {
     paidOn: values.paid_on,
     note: values.note,
   });
+  analytics.track(req, 'fee_collected', { amount, mode: values.mode, class: batchLabel(student), backdated: values.paid_on !== today() });
   res.redirect(`/payments/${paymentId}?new=1`);
 });
 
@@ -90,6 +92,7 @@ router.get('/payments/:id/receipt.pdf', (req, res, next) => {
   if (!payment) return next();
   const safeName = payment.student_name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
   const disposition = req.query.view === '1' ? 'inline' : 'attachment';
+  analytics.track(req, 'receipt_downloaded', { view: disposition, mode: payment.mode });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `${disposition}; filename="Receipt-${payment.receipt_no}-${safeName}.pdf"`);
   writeReceipt(res, payment);
@@ -100,7 +103,8 @@ router.post('/payments/:id/void', (req, res, next) => {
   const payment = getPayment(req.params.id);
   if (!payment) return next();
   const reason = (req.body.reason || '').trim().slice(0, 200) || 'Cancelled';
-  db.prepare('UPDATE payments SET voided = 1, void_reason = ? WHERE id = ? AND voided = 0').run(reason, payment.id);
+  const info = db.prepare('UPDATE payments SET voided = 1, void_reason = ? WHERE id = ? AND voided = 0').run(reason, payment.id);
+  if (info.changes) analytics.track(req, 'receipt_cancelled', { amount: payment.amount, mode: payment.mode });
   req.flash('success', `Receipt ${payment.receipt_no} cancelled. The amount is back in the student's pending balance.`);
   res.redirect(`/payments/${payment.id}`);
 });
@@ -123,6 +127,7 @@ router.get('/reports', (req, res) => {
     WHERE ${where.join(' AND ')} ORDER BY p.paid_on DESC, p.id DESC`).all(...params);
 
   if (req.query.format === 'csv') {
+    analytics.track(req, 'report_exported', { format: 'csv', rows: payments.length });
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = [['Receipt', 'Date', 'Student', 'Class', 'Amount', 'Mode', 'Reference', 'Towards', 'Note'].join(',')];
     for (const p of payments) {

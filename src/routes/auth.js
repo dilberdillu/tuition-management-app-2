@@ -1,5 +1,6 @@
 const express = require('express');
 const auth = require('../auth');
+const analytics = require('../analytics');
 
 const router = express.Router();
 
@@ -16,14 +17,19 @@ router.post('/login', (req, res) => {
   const next = safeNext(req.body.next);
   const render = (error) => res.status(401).render('login', { title: 'Login', next, error, noUsers: auth.userCount() === 0 });
 
-  if (auth.isLocked(req.ip)) return render('Too many failed attempts. Try again in 15 minutes.');
+  if (auth.isLocked(req.ip)) {
+    analytics.track(req, 'login_failed', { reason: 'locked' });
+    return render('Too many failed attempts. Try again in 15 minutes.');
+  }
   const user = auth.verifyUser(username.trim(), password);
   if (!user) {
     auth.recordFailure(req.ip);
+    analytics.track(req, 'login_failed', { reason: 'wrong_password' });
     return render('Wrong username or password.');
   }
   auth.failures.delete(req.ip);
   req.session.user = user;
+  analytics.track(req, 'logged_in');
   res.redirect(next);
 });
 

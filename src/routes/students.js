@@ -2,7 +2,8 @@ const express = require('express');
 const db = require('../db');
 const { studentBalances, syncStudent, ledger } = require('../fees');
 const online = require('../online');
-const { today, currentMonth, isValidDate, isValidMonth } = require('../util');
+const analytics = require('../analytics');
+const { today, currentMonth, isValidDate, isValidMonth, batchLabel } = require('../util');
 
 const router = express.Router();
 
@@ -68,6 +69,7 @@ router.post('/students', (req, res) => {
     VALUES (@name, @batch_id, @roll_no, @phone, @guardian_name, @guardian_phone, @address, @joined_on, @status, @left_on)`)
     .run(s).lastInsertRowid;
   syncStudent(id);
+  analytics.track(req, 'student_added', { class: batchLabel(db.prepare('SELECT * FROM batches WHERE id = ?').get(s.batch_id)) });
   req.flash('success', `${s.name} added.`);
   res.redirect(`/students/${id}`);
 });
@@ -112,6 +114,7 @@ router.post('/students/:id', (req, res, next) => {
       joined_on = @joined_on, status = @status, left_on = @left_on
     WHERE id = @id`).run(s);
   syncStudent(s.id);
+  analytics.track(req, 'student_updated', { left_center: existing.status === 'active' && s.status === 'inactive' });
   req.flash('success', 'Student details saved.');
   res.redirect(`/students/${s.id}`);
 });
@@ -123,6 +126,7 @@ router.post('/students/:id/dues/:month/waive', (req, res, next) => {
   const info = db.prepare('UPDATE dues SET waived = ? WHERE student_id = ? AND month = ?')
     .run(waived, req.params.id, req.params.month);
   if (!info.changes) return next();
+  analytics.track(req, waived ? 'fee_waived' : 'fee_waive_undone');
   req.flash('success', waived ? 'Month fee waived.' : 'Month fee restored.');
   res.redirect(`/students/${req.params.id}#dues`);
 });

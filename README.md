@@ -110,6 +110,15 @@ A payment is recorded only once, even if Dodo sends the webhook again. Each fee 
 
 Testing: use a `dodo_test_` key with `DODO_PAYMENTS_ENVIRONMENT=test_mode`. Payments are in INR with an Indian billing address, so Dodo accepts only Indian methods: pay with UPI ID `success@upi` or the Indian test card `4576 2389 1277 1450` (expiry 06/32, CVV 123). Foreign cards such as `4242…` fail with `PAYMENT_METHOD_UNSUPPORTED`. If a payment fails, the parent's **Pay** button starts a fresh checkout for the same link. Switch to a live key and `live_mode` only when the Dodo account is approved for live payments.
 
+## Usage analytics (PostHog)
+
+Turned on when `POSTHOG_KEY` is set (see `.env.example`). Leave it empty to turn analytics off.
+
+- **Staff pages** load PostHog for page views, clicks and session replay. The script is served from this app (`/static/vendor/posthog.js`, the "no-external" build), so no third-party scripts run. All page text and form inputs are masked in replays and click data, and the student search (`?q=`) is removed from every URL sent.
+- **Server events** (`src/analytics.js`): `logged_in`, `login_failed`, `fee_collected`, `receipt_downloaded`, `receipt_cancelled`, `report_exported`, `student_added`, `student_updated`, `fee_waived`, `attendance_saved`, `class_fees_updated`, `password_changed`, and for online payments `pay_link_created`, `pay_page_opened`, `pay_checkout_started`, `pay_link_paid`, `parent_receipt_downloaded`, `pay_link_cancelled`. Server errors are sent as exceptions.
+- **No personal data:** events carry classes, payment modes, amounts and counts, never student or parent names, phone numbers or balances. Staff are identified by their login name. Parent pages load no PostHog script; their server events are keyed by the payment link only.
+- Every event has `app_env` (`production` or `development`), so testing on a laptop can be filtered out.
+
 ## Project layout
 
 ```
@@ -119,6 +128,7 @@ src/db.js            SQLite schema (created automatically)
 src/fees.js          Dues generation, ledger, payment recording
 src/receipt.js       PDF receipt (pdfkit)
 src/online.js        Online payment links (Dodo Payments)
+src/analytics.js     PostHog usage analytics (server events)
 src/routes/          Dashboard, students, fees/reports, attendance, settings, auth, online payments
 views/               EJS templates
 public/              CSS, small JS enhancements
