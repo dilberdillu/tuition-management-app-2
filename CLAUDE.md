@@ -25,6 +25,7 @@ Shared course server. Other students' apps run on it too.
 | Settings and secrets | `~/.config/tuition.env` (chmod 600, never committed). Quote values containing spaces, e.g. `CENTER_NAME="Bright Future Tuition"` |
 | Admin login | user `admin`; generated password stored only in `~/.config/tuition-admin.txt` (chmod 600) |
 | Service | `~/.config/systemd/user/tuition.service` |
+| Online payments | Dodo Payments, **test mode**. Keys in `~/.config/tuition.env` (`DODO_PAYMENTS_*`). Webhook `https://dhilber.dhilber.in/webhooks/dodo` for `payment.succeeded` (Dodo endpoint `ep_3LIpMIpKU91DfXFvWsaj76KKFp2`); its signing secret is `DODO_PAYMENTS_WEBHOOK_KEY` |
 
 ### Updating
 
