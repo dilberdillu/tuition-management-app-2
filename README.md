@@ -108,7 +108,7 @@ How the payment is confirmed:
 
 A payment is recorded only once, even if Dodo sends the webhook again. Each fee amount becomes one Dodo product the first time it's used (Dodo charges a product's fixed price, priced in INR and tax inclusive).
 
-Testing: use a `dodo_test_` key with `DODO_PAYMENTS_ENVIRONMENT=test_mode` and Dodo's test card `4242 4242 4242 4242` (any future expiry and CVV). Switch to a live key and `live_mode` only when the Dodo account is approved for live payments.
+Testing: use a `dodo_test_` key with `DODO_PAYMENTS_ENVIRONMENT=test_mode`. Payments are in INR with an Indian billing address, so Dodo accepts only Indian methods: pay with UPI ID `success@upi` or the Indian test card `4576 2389 1277 1450` (expiry 06/32, CVV 123). Foreign cards such as `4242…` fail with `PAYMENT_METHOD_UNSUPPORTED`. If a payment fails, the parent's **Pay** button starts a fresh checkout for the same link. Switch to a live key and `live_mode` only when the Dodo account is approved for live payments.
 
 ## Project layout
 

@@ -37,6 +37,7 @@ const stmt = {
   linkIdBySession: db.prepare('SELECT id FROM pay_links WHERE session_id = ?'),
   markPaid: db.prepare("UPDATE pay_links SET status = 'paid', dodo_payment_id = ?, payment_id = ? WHERE id = ?"),
   cancel: db.prepare("UPDATE pay_links SET status = 'cancelled' WHERE id = ? AND status = 'pending'"),
+  newSession: db.prepare("UPDATE pay_links SET session_id = ?, checkout_url = ? WHERE id = ? AND status = 'pending'"),
   forStudent: db.prepare('SELECT * FROM pay_links WHERE student_id = ? ORDER BY id DESC LIMIT 10'),
 };
 
@@ -69,16 +70,22 @@ async function productFor(amount) {
   return stmt.product.get(env, amount).product_id;
 }
 
-async function createLink(student, amount, baseUrl) {
-  const token = crypto.randomBytes(16).toString('hex');
-  const productId = await productFor(amount);
-  const session = await client.checkoutSessions.create({
-    product_cart: [{ product_id: productId, quantity: 1 }],
+// Payment statuses after which a checkout session is finished without the money being paid.
+const FAILED = ['failed', 'cancelled'];
+
+async function createSession(token, studentId, amount, baseUrl) {
+  return client.checkoutSessions.create({
+    product_cart: [{ product_id: await productFor(amount), quantity: 1 }],
     billing_currency: 'INR',
     billing_address: { country: 'IN' },
-    metadata: { pay_link: token, student_id: String(student.id) },
+    metadata: { pay_link: token, student_id: String(studentId) },
     return_url: `${baseUrl}/pay/${token}`,
   });
+}
+
+async function createLink(student, amount, baseUrl) {
+  const token = crypto.randomBytes(16).toString('hex');
+  const session = await createSession(token, student.id, amount, baseUrl);
   const info = stmt.insertLink.run({
     token,
     student_id: student.id,
@@ -88,6 +95,18 @@ async function createLink(student, amount, baseUrl) {
     checkout_url: session.checkout_url,
   });
   return info.lastInsertRowid;
+}
+
+// Where the Pay button should go. After a failed attempt (e.g. a card Dodo doesn't accept),
+// start a fresh checkout for the same link instead of sending the parent back to the failed one.
+// Payments from any session of the link are matched by its token, so none can be missed.
+async function checkoutUrl(link, baseUrl) {
+  if (!enabled || link.environment !== config.dodo.environment) return link.checkout_url;
+  const session = await client.checkoutSessions.retrieve(link.session_id);
+  if (!FAILED.includes(session.payment_status)) return link.checkout_url;
+  const fresh = await createSession(link.token, link.student_id, link.amount, baseUrl);
+  stmt.newSession.run(fresh.session_id, fresh.checkout_url, link.id);
+  return fresh.checkout_url;
 }
 
 // Record a confirmed Dodo payment against its link, exactly once. Returns the payments.id or null.
@@ -158,6 +177,7 @@ module.exports = {
   MIN_AMOUNT,
   LINK_HOURS,
   createLink,
+  checkoutUrl,
   getLink,
   getLinkByToken,
   linksForStudent,

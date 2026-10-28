@@ -13,7 +13,7 @@
   <main class="login-page">
     <div class="card login-card pay-card">
       <div class="brand"><span class="brand-mark">₹</span><span><%= center.name %></span></div>
-      <% if (testMode) { %><div class="notice">Test mode: no real money is charged.</div><% } %>
+      <% if (testMode) { %><div class="notice">Test mode: no real money is charged. Pay with UPI ID success@upi, or Indian test card 4576 2389 1277 1450 (expiry 06/32, CVV 123).</div><% } %>
 
       <% if (link.status === 'paid' && payment) { %>
         <div class="receipt-success">
@@ -42,10 +42,10 @@
           <a class="btn btn-lg btn-block" href="/pay/<%= link.token %>?status=<%= encodeURIComponent(returnStatus) %>">Refresh</a>
         <% } else { %>
           <% if (returnStatus) { %>
-            <div class="errors">The payment did not go through. You can try again.</div>
+            <div class="errors">The payment did not go through. You can try again with UPI or an Indian debit/credit card.</div>
           <% } %>
-          <a class="btn btn-success btn-lg btn-block" href="<%= link.checkout_url %>">Pay <%= u.inr(link.amount) %></a>
-          <p class="muted small">UPI or card. Payment is processed securely by Dodo Payments.</p>
+          <a class="btn btn-success btn-lg btn-block" href="/pay/<%= link.token %>/checkout">Pay <%= u.inr(link.amount) %></a>
+          <p class="muted small">UPI or Indian debit/credit card. Payment is processed securely by Dodo Payments.</p>
         <% } %>
 
       <% } else { %>

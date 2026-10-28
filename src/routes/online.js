@@ -45,6 +45,20 @@ publicRouter.get('/pay/:token', async (req, res) => {
   });
 });
 
+// The Pay button. Goes through here so a failed attempt can be retried with a fresh checkout.
+publicRouter.get('/pay/:token/checkout', async (req, res) => {
+  let link = online.getLinkByToken(req.params.token);
+  if (!link) return notFound(res);
+  link = await online.refreshLink(link);
+  if (link.state !== 'pending') return res.redirect(`/pay/${link.token}`);
+  try {
+    res.redirect(await online.checkoutUrl(link, baseUrl(req)));
+  } catch (err) {
+    console.error(`Could not open checkout for pay link ${link.id}:`, err.status || '', err.message);
+    res.status(503).render('error', { title: 'Payment page unavailable', message: 'Please try again in a minute.' });
+  }
+});
+
 publicRouter.get('/pay/:token/receipt.pdf', (req, res) => {
   const link = online.getLinkByToken(req.params.token);
   const payment = link && link.payment_id ? getPayment(link.payment_id) : null;

@@ -8,7 +8,7 @@
   <a class="back" href="/students/<%= link.student_id %>"><%- include('../partials/icon', { name: 'back' }) %> <%= link.student_name %></a>
 
   <% if (testMode) { %>
-    <div class="notice">Test mode: no real money is charged. Pay with Dodo's test card 4242 4242 4242 4242 and any future date and CVV.</div>
+    <div class="notice">Test mode: no real money is charged. Pay with UPI ID success@upi, or Indian test card 4576 2389 1277 1450 (expiry 06/32, CVV 123). Foreign cards such as 4242… are declined for INR payments.</div>
   <% } %>
 
   <section class="card">
@@ -32,7 +32,7 @@
       <div class="field">
         <label for="shareUrl">Send this link to the parent</label>
         <input id="shareUrl" class="share-url" value="<%= shareUrl %>" readonly>
-        <div class="hint">They can pay by UPI or card. It works for <%= linkHours %> hours, and the fee is recorded here automatically once paid.</div>
+        <div class="hint">They can pay by UPI or an Indian debit/credit card. It works for <%= linkHours %> hours, and the fee is recorded here automatically once paid.</div>
       </div>
       <div class="grid grid-2" style="gap: 10px;">
         <button type="button" class="btn btn-primary btn-block" data-share="#shareUrl" data-share-title="Fee payment for <%= link.student_name %>">Share link</button>
