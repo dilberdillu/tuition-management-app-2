@@ -13,7 +13,7 @@ It runs on Node.js + Express, stores data in SQLite, and renders its pages on th
 - **Assistant (optional):** an AI chat for staff (💬 icon at the top) that drafts parent notices, makes study plans and explains how to use the app. See *AI assistant* below.
 - **Receipts:** numbered per year (`R2026-0001`). A receipt is never deleted, only cancelled, so the numbering has no gaps.
 - **Attendance:** pick a class, everyone starts as present, tap the absentees, save. There's also a monthly report per class.
-- **Reports:** collections for any date range, filterable by class and mode, with CSV export.
+- **Reports:** collections for any date range (with quick picks like *Last month*), filterable by division or whole class, mode, student/receipt search and cancelled receipts, with a choice of sort order. Shows students who paid, average receipt, fees billed vs collected, pending now, and breakdowns by mode, by day or month, and by class. CSV export.
 - **Classes:** 8-A to 10-D (12 classes), each with its own monthly fee (Settings).
 
 ## Run locally

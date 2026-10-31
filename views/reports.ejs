@@ -1,9 +1,21 @@
 <%- include('partials/head') %>
+<%
+  const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
+  const monthsName = months.length > 1 ? `${u.monthLabel(months[0])} – ${u.monthLabel(months[months.length - 1])}` : u.monthLabel(months[0]);
+  const modeRows = modes.filter((m) => byMode[m]);
+  const maxMode = Math.max(1, ...modeRows.map((m) => byMode[m].total));
+  const maxPeriod = Math.max(1, ...byPeriod.map((p) => p.total));
+  const listing = status === 'cancelled' ? 'cancelled' : status === 'all' ? 'all' : 'valid';
+%>
 <div class="page-head">
   <div><h1>Collections report</h1><div class="sub"><%= u.dateLabel(from) %> – <%= u.dateLabel(to) %></div></div>
   <div class="actions">
     <a class="btn" href="/reports?<%= query %>&format=csv"><%- include('partials/icon', { name: 'download' }) %> CSV</a>
   </div>
+</div>
+
+<div class="chips">
+  <% presets.forEach((p) => { %><a class="chip <%= p.active ? 'active' : '' %>" href="<%= p.href %>"><%= p.label %></a><% }) %>
 </div>
 
 <form class="filters card" method="get" action="/reports" style="padding: 12px;">
@@ -13,7 +25,12 @@
     <label for="batch">Class</label>
     <select id="batch" name="batch">
       <option value="">All classes</option>
-      <% batches.forEach((b) => { %><option value="<%= b.id %>" <%= b.id === batchId ? 'selected' : '' %>><%= u.batchLabel(b) %></option><% }) %>
+      <% classNos.forEach((c) => { %>
+        <optgroup label="Class <%= c %>">
+          <option value="class-<%= c %>" <%= batchValue === `class-${c}` ? 'selected' : '' %>>All of class <%= c %></option>
+          <% batches.filter((b) => b.class_no === c).forEach((b) => { %><option value="<%= b.id %>" <%= b.id === batchValue ? 'selected' : '' %>><%= u.batchLabel(b) %></option><% }) %>
+        </optgroup>
+      <% }) %>
     </select>
   </div>
   <div>
@@ -23,41 +40,158 @@
       <% modes.forEach((m) => { %><option <%= m === mode ? 'selected' : '' %>><%= m %></option><% }) %>
     </select>
   </div>
-  <div style="align-self: end; flex: 0 0 auto;"><button class="btn btn-primary" type="submit">Apply</button></div>
+  <div>
+    <label for="q">Student or receipt</label>
+    <input id="q" type="search" name="q" value="<%= q %>" placeholder="Name, roll no, receipt, reference">
+  </div>
+  <div>
+    <label for="status">Receipts</label>
+    <select id="status" name="status">
+      <option value="">Valid only</option>
+      <option value="cancelled" <%= status === 'cancelled' ? 'selected' : '' %>>Cancelled only</option>
+      <option value="all" <%= status === 'all' ? 'selected' : '' %>>Valid and cancelled</option>
+    </select>
+  </div>
+  <div>
+    <label for="sort">Sort by</label>
+    <select id="sort" name="sort">
+      <% sorts.forEach((s) => { %><option value="<%= s.value %>" <%= s.value === sort ? 'selected' : '' %>><%= s.label %></option><% }) %>
+    </select>
+  </div>
+  <div style="align-self: end; flex: 0 0 auto; display: flex; gap: 8px;">
+    <a class="btn" href="/reports">Reset</a>
+    <button class="btn btn-primary" type="submit">Apply</button>
+  </div>
 </form>
 
 <div class="stats" style="margin-top: 16px;">
   <div class="stat accent">
     <div class="stat-label">Total collected</div>
     <div class="stat-value"><%= u.inr(total) %></div>
-    <div class="stat-foot"><%= payments.length %> receipt<%= payments.length === 1 ? '' : 's' %></div>
+    <div class="stat-foot"><%= receiptCount %> receipt<%= receiptCount === 1 ? '' : 's' %></div>
   </div>
-  <% modes.forEach((m) => { %>
-    <% if (byMode[m]) { %>
-      <div class="stat"><div class="stat-label"><%= m %></div><div class="stat-value"><%= u.inr(byMode[m]) %></div></div>
+  <div class="stat">
+    <div class="stat-label">Students who paid</div>
+    <div class="stat-value"><%= studentsPaid %></div>
+    <div class="stat-foot">of <%= activeStudents %> active student<%= activeStudents === 1 ? '' : 's' %></div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Average receipt</div>
+    <div class="stat-value"><%= u.inr(receiptCount ? Math.round(total / receiptCount) : 0) %></div>
+    <div class="stat-foot">per payment</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Fees billed</div>
+    <div class="stat-value"><%= u.inr(billed) %></div>
+    <% if (showRate) { %>
+      <div class="stat-foot"><%= monthsName %> · <%= pct(total, billed) %>% collected</div>
+      <div class="progress"><span style="width: <%= Math.min(100, pct(total, billed)) %>%"></span></div>
+    <% } else { %>
+      <div class="stat-foot"><%= monthsName %></div>
     <% } %>
-  <% }) %>
+  </div>
+  <a class="stat warn" href="/students?pending=1<%= typeof batchValue === 'number' ? `&batch=${batchValue}` : '' %>" style="color: inherit; text-decoration: none;">
+    <div class="stat-label">Pending now</div>
+    <div class="stat-value"><%= u.inr(pendingTotal) %></div>
+    <div class="stat-foot"><%= pendingCount %> of <%= activeStudents %> students</div>
+  </a>
+  <div class="stat">
+    <div class="stat-label">Cancelled receipts</div>
+    <div class="stat-value <%= cancelledCount ? '' : 'muted' %>"><%= u.inr(cancelledTotal) %></div>
+    <div class="stat-foot"><%= cancelledCount %> receipt<%= cancelledCount === 1 ? '' : 's' %> · not in totals</div>
+  </div>
 </div>
 
-<section class="card flush">
-  <% if (!payments.length) { %>
-    <div class="empty">No payments in this period</div>
+<div class="grid grid-2">
+  <section class="card">
+    <div class="card-head"><h2>By payment mode</h2></div>
+    <% if (!modeRows.length) { %>
+      <div class="empty">No payments in this period</div>
+    <% } %>
+    <% modeRows.forEach((m) => { %>
+      <div class="mode-row">
+        <div style="width: 64px;" class="small"><strong><%= m %></strong></div>
+        <div class="mode-bar"><span style="width: <%= Math.round((byMode[m].total / maxMode) * 100) %>%"></span></div>
+        <div class="num small right" style="min-width: 96px;"><%= u.inr(byMode[m].total) %><div class="muted"><%= byMode[m].count %> paid · <%= pct(byMode[m].total, total) %>%</div></div>
+      </div>
+    <% }) %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2><%= daily ? 'By day' : 'By month' %></h2></div>
+    <% if (!byPeriod.length) { %>
+      <div class="empty">No payments in this period</div>
+    <% } %>
+    <% byPeriod.forEach((p) => { %>
+      <div class="mode-row">
+        <div style="width: 84px;" class="small nowrap"><strong><%= p.label %></strong></div>
+        <div class="mode-bar"><span style="width: <%= Math.round((p.total / maxPeriod) * 100) %>%"></span></div>
+        <div class="num small right" style="min-width: 96px;"><%= u.inr(p.total) %><div class="muted"><%= p.count %> paid</div></div>
+      </div>
+    <% }) %>
+  </section>
+</div>
+
+<section class="card flush" style="margin-top: 16px;">
+  <div class="card-head"><h2>Class-wise</h2><span class="muted small">Billed for <%= monthsName %></span></div>
+  <% if (!byClass.length) { %>
+    <div class="empty">No classes match</div>
   <% } else { %>
-  <div class="table-wrap">
+  <div class="table-wrap" style="margin-top: 12px;">
     <table>
-      <thead><tr><th>Date</th><th>Student</th><th>Receipt</th><th>Mode</th><th class="num">Amount</th></tr></thead>
+      <thead>
+        <tr><th>Class</th><th class="num">Students paid</th><th class="num">Receipts</th><th class="num">Collected</th><th class="num">Billed</th><th class="num">Pending now</th></tr>
+      </thead>
+      <tbody>
+        <% byClass.forEach((c) => { %>
+          <tr>
+            <td><a href="/students?batch=<%= c.id %>"><strong><%= u.batchLabel(c) %></strong></a></td>
+            <td class="num"><%= c.studentsPaid %> / <%= c.students %></td>
+            <td class="num"><%= c.receipts %></td>
+            <td class="num"><%= u.inr(c.collected) %></td>
+            <td class="num"><%= u.inr(c.billed) %></td>
+            <td class="num" style="<%= c.pending > 0 ? 'color: var(--danger); font-weight: 600;' : '' %>"><%= u.inr(c.pending) %><% if (c.pendingCount) { %><div class="muted small" style="font-weight: 400;"><%= c.pendingCount %> student<%= c.pendingCount === 1 ? '' : 's' %></div><% } %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td class="num"><%= byClass.reduce((t, c) => t + c.studentsPaid, 0) %> / <%= byClass.reduce((t, c) => t + c.students, 0) %></td>
+          <td class="num"><%= byClass.reduce((t, c) => t + c.receipts, 0) %></td>
+          <td class="num"><%= u.inr(byClass.reduce((t, c) => t + c.collected, 0)) %></td>
+          <td class="num"><%= u.inr(byClass.reduce((t, c) => t + c.billed, 0)) %></td>
+          <td class="num"><%= u.inr(byClass.reduce((t, c) => t + c.pending, 0)) %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<section class="card flush" style="margin-top: 16px;">
+  <div class="card-head"><h2>Receipts</h2><span class="muted small"><%= payments.length %> <%= listing === 'all' ? '' : `${listing} ` %>receipt<%= payments.length === 1 ? '' : 's' %></span></div>
+  <% if (!payments.length) { %>
+    <div class="empty">No <%= listing === 'cancelled' ? 'cancelled receipts' : 'payments' %> in this period</div>
+  <% } else { %>
+  <div class="table-wrap" style="margin-top: 12px;">
+    <table>
+      <thead><tr><th>Date</th><th>Student</th><th>Receipt</th><th>Mode</th><th>Towards</th><th class="num">Amount</th></tr></thead>
       <tbody>
         <% payments.forEach((p) => { %>
-          <tr>
+          <tr class="<%= p.voided ? 'voided' : '' %>">
             <td class="nowrap"><%= u.dateLabel(p.paid_on) %></td>
-            <td><a href="/students/<%= p.student_id %>"><%= p.name %></a><div class="muted small"><%= u.batchLabel(p) %></div></td>
-            <td class="nowrap"><a href="/payments/<%= p.id %>"><%= p.receipt_no %></a></td>
-            <td><%= p.mode %></td>
+            <td><a href="/students/<%= p.student_id %>"><%= p.name %></a><div class="muted small"><%= u.batchLabel(p) %><%= p.roll_no ? ` · Roll ${p.roll_no}` : '' %></div></td>
+            <td class="nowrap"><a href="/payments/<%= p.id %>"><%= p.receipt_no %></a><% if (p.voided) { %><div class="small"><span class="badge badge-due">Cancelled</span></div><% } %></td>
+            <td><%= p.mode %><% if (p.reference) { %><div class="muted small"><%= p.reference %></div><% } %></td>
+            <td class="small"><%= p.covers %></td>
             <td class="num"><%= u.inr(p.amount) %></td>
           </tr>
         <% }) %>
       </tbody>
-      <tfoot><tr><td colspan="4">Total</td><td class="num"><%= u.inr(total) %></td></tr></tfoot>
+      <% if (listing === 'valid') { %>
+        <tfoot><tr><td colspan="5">Total</td><td class="num"><%= u.inr(total) %></td></tr></tfoot>
+      <% } %>
     </table>
   </div>
   <% } %>
