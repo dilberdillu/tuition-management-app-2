@@ -33,6 +33,11 @@ module.exports = {
     key: process.env.POSTHOG_KEY || '',
     host: (process.env.POSTHOG_HOST || 'https://us.i.posthog.com').replace(/\/+$/, ''),
   },
+  // Staff AI assistant through OpenRouter. Disabled when no API key is set.
+  openrouter: {
+    apiKey: process.env.OPENROUTER_API_KEY || '',
+    model: process.env.OPENROUTER_MODEL || 'mistralai/mistral-nemo',
+  },
   // Online payments through Dodo Payments. Disabled when no API key is set.
   dodo: {
     apiKey: process.env.DODO_PAYMENTS_API_KEY || '',

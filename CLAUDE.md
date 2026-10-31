@@ -6,6 +6,7 @@ Node.js + Express + SQLite (better-sqlite3) app with server-rendered EJS views. 
 - Schema is created automatically in `src/db.js`. Fee ledger logic is in `src/fees.js`.
 - Online payments (Dodo Payments) are in `src/online.js` and `src/routes/online.js`; see README "Online payments". Keys come from `DODO_PAYMENTS_*` env vars (local: `.env`, gitignored). Never put keys in `.env.example`.
 - Usage analytics (PostHog) are in `src/analytics.js` and `public/js/analytics.js`; see README "Usage analytics". Never send student/parent names, phones or balances in events.
+- Staff AI assistant (OpenRouter) is in `src/chat.js`, `src/routes/chat.js` and `public/js/chat.js`; see README "AI assistant". Key: `OPENROUTER_API_KEY`. Never send student records to the model.
 - Local dev: `npm run dev`. Demo data: `DB_PATH=data/demo.db npm run seed-demo`.
 
 ## Deployment

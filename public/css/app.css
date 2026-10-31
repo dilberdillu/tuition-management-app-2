@@ -273,6 +273,19 @@ details summary { cursor: pointer; color: var(--muted); font-size: .88rem; }
 .pay-card { text-align: center; }
 .pay-card .kv { text-align: left; margin: 16px 0; }
 
+/* ---------- Assistant chat ---------- */
+.chat { display: flex; flex-direction: column; gap: 12px; }
+.chat-log { display: flex; flex-direction: column; gap: 10px; min-height: 160px; }
+.chat-suggest { display: flex; flex-wrap: wrap; gap: 8px; }
+.chat-msg { max-width: 88%; padding: 10px 14px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-user { align-self: flex-end; background: var(--primary); color: var(--primary-ink); border-bottom-right-radius: 4px; }
+.chat-assistant { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.chat-typing { align-self: flex-start; color: var(--muted); font-style: italic; }
+.chat-error { align-self: flex-start; background: var(--danger-soft); color: var(--danger); }
+.chat-copy { display: block; margin-top: 6px; }
+.chat-form { display: flex; gap: 8px; align-items: flex-end; }
+.chat-form textarea { min-height: 44px; max-height: 160px; resize: none; }
+
 /* ---------- Print ---------- */
 @media print {
   .topbar, .bottomnav, .no-print, .flash { display: none !important; }

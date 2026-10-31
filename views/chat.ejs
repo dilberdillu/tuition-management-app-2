@@ -1,0 +1,38 @@
+<%- include('partials/head') %>
+<div class="page-head">
+  <div>
+    <h1>Assistant</h1>
+    <div class="sub">Ask for a parent notice, a study plan, or how to use this app.</div>
+  </div>
+  <% if (enabled) { %>
+    <div class="actions"><button type="button" class="btn btn-sm hidden" id="chat-clear">New chat</button></div>
+  <% } %>
+</div>
+
+<% if (!enabled) { %>
+  <div class="card">
+    <p style="margin-top: 0;">The assistant is not set up yet.</p>
+    <p class="muted small" style="margin-bottom: 0;">Add an OpenRouter API key as <code>OPENROUTER_API_KEY</code> in the app's settings file and restart the app.</p>
+  </div>
+<% } else { %>
+  <section class="card chat">
+    <div class="chat-log" id="chat-log" aria-live="polite">
+      <div class="chat-empty" id="chat-empty">
+        <p class="muted" style="margin-top: 0;">Try one of these:</p>
+        <div class="chat-suggest">
+          <button type="button" class="btn btn-sm" data-ask="Write a short, polite fee reminder for parents whose fee for this month is pending.">Fee reminder</button>
+          <button type="button" class="btn btn-sm" data-ask="Write a holiday notice for parents. The centre will be closed for 2 days.">Holiday notice</button>
+          <button type="button" class="btn btn-sm" data-ask="Make a 4-week revision plan for class 10 board exam maths.">Revision plan</button>
+          <button type="button" class="btn btn-sm" data-ask="How do I mark attendance in this app?">Marking attendance</button>
+        </div>
+      </div>
+    </div>
+    <form class="chat-form" id="chat-form">
+      <textarea id="chat-input" rows="1" maxlength="<%= maxChars %>" placeholder="Type your question…" aria-label="Your question" required></textarea>
+      <button class="btn btn-primary" type="submit" id="chat-send">Send</button>
+    </form>
+    <p class="muted small" style="margin: 0;">The assistant can't see student records. Don't type phone numbers or private details. Answers can be wrong, so check them before sending to parents.</p>
+    <noscript><p class="errors">The assistant needs JavaScript turned on.</p></noscript>
+  </section>
+<% } %>
+<%- include('partials/foot', { scripts: enabled ? ['/static/js/chat.js'] : [] }) %>

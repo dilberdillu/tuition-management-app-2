@@ -27,6 +27,7 @@
       <% }) %>
     </nav>
     <div class="topbar-actions">
+      <% if (locals.chatEnabled) { %><a href="/chat" class="icon-btn <%= path.startsWith('/chat') ? 'active' : '' %>" title="Assistant" aria-label="Assistant"><%- include('icon', { name: 'chat' }) %></a><% } %>
       <a href="/settings" class="icon-btn <%= path.startsWith('/settings') ? 'active' : '' %>" title="Settings" aria-label="Settings"><%- include('icon', { name: 'settings' }) %></a>
       <form method="post" action="/logout"><button class="icon-btn" title="Log out" aria-label="Log out"><%- include('icon', { name: 'logout' }) %></button></form>
     </div>

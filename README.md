@@ -10,6 +10,7 @@ It runs on Node.js + Express, stores data in SQLite, and renders its pages on th
 - **Fee ledger:** a monthly fee is charged automatically for every active student from their joining month. Payments settle the oldest month first. Partial and advance payments both work. Single months can be waived.
 - **Student profile:** pending amount, month-by-month fee status, every receipt (downloadable PDF) and an attendance summary.
 - **Online payments (optional):** from the collect screen, send the parent a payment link. They pay by UPI or card through Dodo Payments, and the fee is recorded with its receipt automatically. See *Online payments* below.
+- **Assistant (optional):** an AI chat for staff (💬 icon at the top) that drafts parent notices, makes study plans and explains how to use the app. See *AI assistant* below.
 - **Receipts:** numbered per year (`R2026-0001`). A receipt is never deleted, only cancelled, so the numbering has no gaps.
 - **Attendance:** pick a class, everyone starts as present, tap the absentees, save. There's also a monthly report per class.
 - **Reports:** collections for any date range, filterable by class and mode, with CSV export.
@@ -119,6 +120,16 @@ Turned on when `POSTHOG_KEY` is set (see `.env.example`). Leave it empty to turn
 - **No personal data:** events carry classes, payment modes, amounts and counts, never student or parent names, phone numbers or balances. Staff are identified by their login name. Parent pages load no PostHog script; their server events are keyed by the payment link only.
 - Every event has `app_env` (`production` or `development`), so testing on a laptop can be filtered out.
 
+## AI assistant (OpenRouter)
+
+Turned on when `OPENROUTER_API_KEY` is set (see `.env.example`). Leave it empty to hide the chat icon.
+
+- Staff open it from the chat icon in the top bar (`/chat`). It drafts notices and messages for parents, answers teaching questions and explains how to use this app.
+- It can't see the database: only what staff type is sent to OpenRouter, along with a fixed description of the app. The page asks staff not to type phone numbers or private details.
+- The conversation is kept in the browser tab only (cleared on logout or **New chat**). The last 20 messages are sent with each question; replies are capped at 700 tokens.
+- Model: `OPENROUTER_MODEL`, default `mistralai/mistral-nemo` (about $0.03 per million tokens, so a reply costs a tiny fraction of a cent). Any model id from openrouter.ai/models works. Free `:free` models also work but are rate-limited.
+- Each staff login can ask 60 questions an hour. PostHog gets `assistant_replied` / `assistant_failed` with the model and token counts, never the text.
+
 ## Project layout
 
 ```
@@ -129,7 +140,8 @@ src/fees.js          Dues generation, ledger, payment recording
 src/receipt.js       PDF receipt (pdfkit)
 src/online.js        Online payment links (Dodo Payments)
 src/analytics.js     PostHog usage analytics (server events)
-src/routes/          Dashboard, students, fees/reports, attendance, settings, auth, online payments
+src/chat.js          Staff AI assistant (OpenRouter)
+src/routes/          Dashboard, students, fees/reports, attendance, settings, auth, online payments, assistant
 views/               EJS templates
 public/              CSS, small JS enhancements
 scripts/             create-admin, seed-demo, backup

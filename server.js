@@ -8,6 +8,7 @@ const util = require('./src/util');
 const { requireLogin, sameOrigin } = require('./src/auth');
 const online = require('./src/online');
 const analytics = require('./src/analytics');
+const chat = require('./src/chat');
 const onlineRoutes = require('./src/routes/online');
 
 const app = express();
@@ -62,6 +63,7 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.path = req.path;
   res.locals.onlineEnabled = online.enabled;
+  res.locals.chatEnabled = chat.enabled;
   res.locals.posthog = analytics.enabled ? { ...config.posthog, env: config.isProd ? 'production' : 'development' } : null;
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
@@ -77,6 +79,7 @@ app.use(require('./src/routes/students'));
 app.use(require('./src/routes/fees'));
 app.use(require('./src/routes/attendance'));
 app.use(require('./src/routes/settings'));
+app.use(require('./src/routes/chat'));
 app.use(onlineRoutes.router);
 
 app.use((req, res) => {

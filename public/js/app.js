@@ -59,6 +59,11 @@
     });
   });
 
+  // Shared phones: the next person to log in shouldn't see this person's assistant chat.
+  document.querySelectorAll('form[action="/logout"]').forEach((form) => {
+    form.addEventListener('submit', () => sessionStorage.removeItem('tm_chat'));
+  });
+
   // Payment links: copy, or open the phone's share sheet (WhatsApp, SMS...) where available.
   const copyText = (btn, text) => {
     navigator.clipboard.writeText(text).then(() => {
