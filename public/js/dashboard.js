@@ -8,7 +8,7 @@
     : n >= 1000 ? `₹${Math.round(n / 1000)}k` : `₹${n}`);
 
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
-  Chart.defaults.color = '#64707d';
+  Chart.defaults.color = '#5b6472';
 
   new Chart(canvas, {
     type: 'bar',
@@ -17,9 +17,9 @@
       datasets: [{
         label: 'Collected',
         data: data.values,
-        backgroundColor: '#1f5f8b',
-        hoverBackgroundColor: '#163f5e',
-        borderRadius: { topLeft: 4, topRight: 4 },
+        backgroundColor: 'rgba(0, 102, 214, .78)',
+        hoverBackgroundColor: '#0066d6',
+        borderRadius: { topLeft: 8, topRight: 8 },
         borderSkipped: 'bottom',
         maxBarThickness: 28,
         categoryPercentage: 0.7,
@@ -31,18 +31,19 @@
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#17212b',
+          backgroundColor: 'rgba(17, 24, 39, .88)',
+          cornerRadius: 10,
           padding: 10,
           displayColors: false,
           callbacks: { label: (ctx) => `Collected: ${inr(ctx.parsed.y)}` },
         },
       },
       scales: {
-        x: { grid: { display: false }, border: { color: '#e3e8ef' }, ticks: { maxRotation: 0, autoSkip: true } },
+        x: { grid: { display: false }, border: { color: 'rgba(15, 23, 42, .1)' }, ticks: { maxRotation: 0, autoSkip: true } },
         y: {
           beginAtZero: true,
           border: { display: false },
-          grid: { color: '#eef1f5' },
+          grid: { color: 'rgba(15, 23, 42, .06)' },
           ticks: { maxTicksLimit: 5, callback: (v) => compact(v) },
         },
       },
