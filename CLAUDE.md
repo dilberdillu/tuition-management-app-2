@@ -28,6 +28,7 @@ Shared course server. Other students' apps run on it too.
 | Admin login | user `admin`; generated password stored only in `~/.config/tuition-admin.txt` (chmod 600) |
 | Service | `~/.config/systemd/user/tuition.service` |
 | Analytics | PostHog (US cloud). `POSTHOG_KEY` / `POSTHOG_HOST` in `~/.config/tuition.env` |
+| AI assistant | OpenRouter, model `mistralai/mistral-nemo`. `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` in `~/.config/tuition.env` |
 | Online payments | Dodo Payments, **test mode**. Keys in `~/.config/tuition.env` (`DODO_PAYMENTS_*`). Webhook `https://dhilber.dhilber.in/webhooks/dodo` for `payment.succeeded` (Dodo endpoint `ep_3LIpMIpKU91DfXFvWsaj76KKFp2`); its signing secret is `DODO_PAYMENTS_WEBHOOK_KEY` |
 
 ### Updating
